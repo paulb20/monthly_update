@@ -3,4 +3,4 @@ monthly_update
 
 Monthly labour market stats update
 
-This is an area for testing monthly abour market stats briefings
+This is an area for testing monthly labour market stats briefings
