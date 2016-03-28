@@ -110,6 +110,8 @@ First thoughts: The sparklines are OK but the series titles run off the chart an
 
 Meanwhile, should add some text.
 
+##Chart 1: UK unemployment (ILO)
+
 Unemployment is `r I(format(tail(mgsc,1)*1000,big.mark=","))`, *down* `r I(format(diff(tail(mgsc,2), lag=1)*1000, big.mark=","))` from last month's published figure (quarterly headline *down* `r I(format(diff(tail(mgsc,4), lag=3)*1000, big.mark=","))`) and the *unemployment rate* is `r I(tail(mgsx,1))`%, *down* `r I(format(diff(tail(mgsx,2), lag=1)))` percentage points on last month and *down* `r I(format(diff(tail(mgsx,4), lag=3)))` percentage points on last quarter. 
 
 
@@ -130,9 +132,6 @@ mgsc.dygraph
 
 That works, though some additional formatting may be needed later on such as colours. It looks as though they may work in the margin, too. They don't.
 
-
-##Chart 1: UK unemployment (ILO)
-
 The latest unemployment figure is `r I(format(tail(mgsc,1)*1000, big.mark=",")) `. It has fallen by `r I(format(diff(tail(mgsc,2), lag=1)*1000, big.mark=","))` from the figure published last month. The unemployment rate stayed at `r I(tail(mgsx,1))`%. 
 
 ```{r unem_dygraph2, echo=FALSE, fig.cap="Unemployment rate", fig.width=7, fig.height=2.5}
@@ -147,4 +146,80 @@ saveWidget(mgsx.dygraph, "Unemployment_rate_dygraph.html", selfcontained = TRUE)
 mgsx.dygraph
 ```
 
+##Chart 15 Employment (number)
 
+```{r emp_sparklines, echo=FALSE, message=FALSE, fig.margin = TRUE, fig.cap = "Employment, Female employment and Male employment", fig.width=4, fig.height=2}
+unem2 <- merge.zoo(mgrz, mgsb, mgsa)
+names(unem2) <- c("Employment", "Female", "Male")
+unem_df <- fortify(tail(unem2,25), melt=TRUE)
+mins <- group_by(unem_df, Series) %>% slice(which.min(Value))
+maxs <- group_by(unem_df, Series) %>% slice(which.max(Value))
+ends <- group_by(unem_df, Series) %>% filter(Index == max(Index))
+quarts <- unem_df %>% group_by(Series) %>%
+  summarize(quart1 = quantile(Value, 0.25),
+            quart2 = quantile(Value, 0.75)) %>%
+  right_join(unem_df)
+p <- ggplot(unem_df, aes(x=Index, y=Value)) + 
+  facet_grid(Series ~ ., scales = "free_y") + 
+  geom_ribbon(data = quarts, aes(ymin = quart1, max = quart2), fill = 'grey90') +
+  geom_line(size=0.3) +
+  geom_point(data = mins, col = 'red') +
+  geom_point(data = maxs, col = 'blue') +
+  geom_text(data = mins, aes(label = Value), vjust = -1, size=2) +
+  geom_text(data = maxs, aes(label = Value), vjust = 2.5, size=2) +
+  geom_text(data = ends, aes(label = Value), hjust = 0, nudge_x = 0.01, size=2) +
+  geom_text(data = ends, aes(label = Series), hjust = 0, nudge_x = 0.1, size=2) +
+  expand_limits(x = max(unem_df$Index) + (0.15 * (max(unem_df$Index) - min(unem_df$Index)))) +
+#  scale_x_continuous(breaks = seq(2013.917, 2015.917, 4)) +
+  scale_y_continuous(expand = c(0.1, 0)) +
+  theme_tufte(base_size = 8) +
+  theme(axis.title=element_blank(), axis.text.y = element_blank(), 
+        axis.ticks = element_blank(), strip.text = element_blank())
+print(p)
+```
+
+Employment is `r I(format(tail(mgrz,1)*1000,big.mark=","))`, *up* `r I(format(diff(tail(mgrz,2), lag=1)*1000, big.mark=","))` from last month's published figure (quarterly headline *up* `r I(format(diff(tail(mgrz,4), lag=3)*1000, big.mark=","))`). 
+
+Female employment is `r I(format(tail(mgsb,1)*1000,big.mark=","))`, *up* `r I(format(diff(tail(mgsb,2), lag=1)*1000, big.mark=","))` from last month's published figure (quarterly headline *up* `r I(format(diff(tail(mgsb,4), lag=3)*1000, big.mark=","))`). 
+
+Male employment is `r I(format(tail(mgsa,1)*1000,big.mark=","))`, *up* `r I(format(diff(tail(mgsa,2), lag=1)*1000, big.mark=","))` from last month's published figure (quarterly headline *up* `r I(format(diff(tail(mgsa,4), lag=3)*1000, big.mark=","))`). 
+
+
+##Chart 16 Employment rate
+
+```{r emprate_sparklines, echo=FALSE, message=FALSE, fig.margin = TRUE, fig.cap = "Employment rates, All, Female and Male", fig.width=4, fig.height=2}
+unem2 <- merge.zoo(lf24, lf25, mgsv)
+names(unem2) <- c("Employment rate", "Female", "Male")
+unem_df <- fortify(tail(unem2,25), melt=TRUE)
+mins <- group_by(unem_df, Series) %>% slice(which.min(Value))
+maxs <- group_by(unem_df, Series) %>% slice(which.max(Value))
+ends <- group_by(unem_df, Series) %>% filter(Index == max(Index))
+quarts <- unem_df %>% group_by(Series) %>%
+  summarize(quart1 = quantile(Value, 0.25),
+            quart2 = quantile(Value, 0.75)) %>%
+  right_join(unem_df)
+p <- ggplot(unem_df, aes(x=Index, y=Value)) + 
+  facet_grid(Series ~ ., scales = "free_y") + 
+  geom_ribbon(data = quarts, aes(ymin = quart1, max = quart2), fill = 'grey90') +
+  geom_line(size=0.3) +
+  geom_point(data = mins, col = 'red') +
+  geom_point(data = maxs, col = 'blue') +
+  geom_text(data = mins, aes(label = Value), vjust = -1, size=2) +
+  geom_text(data = maxs, aes(label = Value), vjust = 2.5, size=2) +
+  geom_text(data = ends, aes(label = Value), hjust = 0, nudge_x = 0.01, size=2) +
+  geom_text(data = ends, aes(label = Series), hjust = 0, nudge_x = 0.1, size=2) +
+  expand_limits(x = max(unem_df$Index) + (0.15 * (max(unem_df$Index) - min(unem_df$Index)))) +
+#  scale_x_continuous(breaks = seq(2013.917, 2015.917, 4)) +
+  scale_y_continuous(expand = c(0.1, 0)) +
+  theme_tufte(base_size = 8) +
+  theme(axis.title=element_blank(), axis.text.y = element_blank(), 
+        axis.ticks = element_blank(), strip.text = element_blank())
+print(p)
+```
+
+
+The *employment rate* is `r I(tail(lf24,1))`%, (*up* `r I(diff(tail(lf24,2), lag=1))` percentage points on last month's published figure and *up* `r I(diff(tail(lf24,4), lag=3))` percentage points in the preferred quarterly measure).
+
+The female employment rate is `r I(tail(lf25,1))`%, *up* `r I(diff(tail(lf25,2), lag=1))` from last month's published figure (quarterly headline *up* `r I(diff(tail(lf25,4), lag=3))`). 
+
+Male employment is `r I(tail(mgsv,1))`, *up* `r I(diff(tail(mgsv,2), lag=1))` from last month's published figure (quarterly headline *up* `r I(diff(tail(mgsv,4), lag=3))`). 
