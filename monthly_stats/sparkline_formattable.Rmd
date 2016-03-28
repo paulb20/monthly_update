@@ -1,0 +1,51 @@
+---
+title: http://stackoverflow.com/q/32841221/680068
+author: "Paul Bivand"
+date: "19 Nov 2015"
+output: html_document
+---
+
+```{r results="asis"}
+
+library(dplyr)
+library(formattable)
+library(sparkline)
+
+
+res <- 
+  iris %>% 
+  group_by(Species) %>% 
+  summarise(N=n(),
+            SL_Mean=round(mean(Sepal.Length),3),
+            SL_SD=round(sd(Sepal.Length),3),
+            SW_Mean=round(mean(Sepal.Width),3),
+            SW_SD=round(sd(Sepal.Width),3)) %>%
+  mutate(sparkline = as.character(Species))
+
+#using formattable
+formattable(
+  res,
+  list(
+    SL_Mean=color_bar("pink", 0.5),
+    "sparkline"=function(z){
+      sapply(
+        z,
+        function(zz){
+          knitr::knit(
+            text = sprintf(
+              '`r sparkline(c(%s))`',
+              paste0(
+                iris[which(iris$Species == zz),"Sepal.Length"],
+                collapse=","
+              )
+            ),
+            quiet = TRUE
+          )
+        }
+      )
+    }
+  )
+)
+
+
+```

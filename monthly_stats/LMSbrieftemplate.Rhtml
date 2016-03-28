@@ -1,0 +1,1322 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+     "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>Learning and Work Institute e-briefing</title>
+<style type="text/css">
+<!--  Add in Google fonts. -->
+    <link type="text/css" rel="stylesheet" href="//fonts.googleapis.com/css?family=Maven+Pro:500,700" media="all"/>
+    <link type="text/css" rel="stylesheet" href="//fonts.googleapis.com/css?family=Raleway:800,500" media="all"/>
+
+<!--
+body {
+	background-color: #FFFFFF;
+}
+a:link {
+	text-decoration: none;
+}
+a:visited {
+	text-decoration: none;
+}
+a:hover {
+	text-decoration: none;
+}
+a:active {
+	text-decoration: none;
+}
+
+
+-->
+</style></head>
+
+<body>
+<!--begin.rcode load_files, echo=FALSE, message=FALSE, warning=FALSE
+#options( java.parameters = "-Xmx2g" )
+library(XLConnect)
+library(zoo)
+library(chron)
+library(RCurl)
+currentdate <- Sys.Date()
+### Change dates for columns in threshold flow chart
+### SORT REGION TABS BY REGION NUMBER
+#Varying
+download_address <- "./lms_16_03_2016"
+lfsdate <- "Nov-Jan 2016"
+lfs_expanded <- "November 2015 to January 2016"
+claimantdate <- "2016 Feb"
+jsaloneparentdate <- "Dec"
+vacsdate <- "Dec-Feb 2016"
+bensdate <- "2015-Aug"
+dates_for_thresholds <- c("Feb 2015", "May 2015", "Aug 2015","Nov 2015", "Feb 2016")
+
+### CHECK COLUMN FOR REGION NAMES to go in regionrownames
+
+esa_ib_ee <- c(2505, 2500, 2495, 2500, 2485)
+is_lp_ee <- c(435, 430, 425, 425, 420)
+eestart <- c(2015,9)
+
+#standard
+template_address <- "./"
+excel_files <- list.files(download_address)
+needed_files <- c("a02sa", "a06sa", "a07", "ben02", "ben03", "cla02", "emp01sa", "hour01sa", "inac01sa", "unem01sa", "vacs01", "jsalp", "ben01", "cla01")
+
+#following Richard Clegg advice, cla01 and cla02 renamed to ben02 and ben03 but cla01 added back at end for claimant count inc
+
+#identify_needed_files <- function(x)(grep(paste0("^",needed_files[x]), excel_files))
+
+stable <- c("stable at", "no change at")
+down <- c("fallen by", "fell by", "down by")
+up <- c("up by", "rose by", "risen by")
+updown <- function(x) {ifelse(x < 0, sample(down,1), ifelse(x >0, sample(up,1), sample(stable,1)))}
+
+overallrownames <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[1]),excel_files, value=TRUE)), sheet=1, header=FALSE, startCol=1, endCol=1)
+overallheaders <-readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[1]),excel_files, value=TRUE)), sheet=1, header=TRUE, startCol=2, startRow=8, endRow=8, colTypes="character")
+overallheaders <- names(overallheaders)
+maleoverallheaders <-readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[1]),excel_files, value=TRUE)), sheet=2, header=TRUE, startCol=2, startRow=8, endRow=8, colTypes="character")
+maleoverallheaders <- names(maleoverallheaders)
+femaleoverallheaders <-readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[1]),excel_files, value=TRUE)), sheet=3, header=TRUE, startCol=2, startRow=8, endRow=8, colTypes="character")
+femaleoverallheaders <- names(femaleoverallheaders)
+
+overallstartrows <- grep("Jan-Mar 1971", overallrownames[,1])
+overallendrows <- grep(lfsdate, overallrownames[,1])
+
+youthrownames <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[2]),excel_files, value=TRUE)), sheet=1, header=FALSE, startCol=1, endCol=1)
+youthheaders <-readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[2]),excel_files, value=TRUE)), sheet=1, header=TRUE, startCol=2, startRow=8, endRow=8, colTypes="character")
+youthheaders <- names(youthheaders)
+
+youthstartrows <- grep("Mar-May 1992", youthrownames[,1])
+youthendrows <- grep(lfsdate, youthrownames[,1])
+
+regionrownames <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[3]),excel_files, value=TRUE)), sheet=1, header=FALSE, startCol=1, endCol=1)
+regionstartrows <- grep("North East", regionrownames[,1])
+regionendrows <- grep("United Kingdom", regionrownames[,1])
+
+hourrownames <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[8]),excel_files, value=TRUE)), sheet=1, header=FALSE, startCol=1, endCol=1)
+hourheaders <-readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[8]),excel_files, value=TRUE)), sheet=1, header=TRUE, startCol=2, startRow=8, endRow=8, colTypes="character")
+hourheaders <- names(hourheaders)
+malehourheaders <-readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[8]),excel_files, value=TRUE)), sheet=2, header=TRUE, startCol=2, startRow=8, endRow=8, colTypes="character")
+malehourheaders <- names(malehourheaders)
+femalehourheaders <-readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[8]),excel_files, value=TRUE)), sheet=3, header=TRUE, startCol=2, startRow=8, endRow=8, colTypes="character")
+femalehourheaders <- names(femalehourheaders)
+
+
+hourstartrows <- grep("Jan-Mar 1971", hourrownames[,1])
+hourendrows <- grep(lfsdate, hourrownames[,1])
+
+duration_ilorownames <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[10]),excel_files, value=TRUE)), sheet=1, header=FALSE, startCol=1, endCol=1)
+duration_iloheaders <-readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[10]),excel_files, value=TRUE)), sheet=1, header=TRUE, startCol=2, startRow=8, endRow=8, colTypes="character")
+duration_iloheaders <- names(duration_iloheaders)
+
+duration_ilostartrows <- grep("Mar-May 1992", duration_ilorownames[,1])
+duration_iloendrows <- grep(lfsdate, duration_ilorownames[,1])
+
+inactrownames <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[9]),excel_files, value=TRUE)), sheet=1, header=FALSE, startCol=1, endCol=1)
+inactheaders <-readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[9]),excel_files, value=TRUE)), sheet=1, header=TRUE, startCol=2, startRow=8, endRow=8, colTypes="character")
+inactheaders <- names(inactheaders)
+inactstartrows <- grep("Mar-May 1992", inactrownames[,1])
+inactendrows <- grep(lfsdate, inactrownames[,1])
+
+involuntrownames <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[7]),excel_files, value=TRUE)), sheet=1, header=FALSE, startCol=1, endCol=1)
+involuntheaders <-readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[7]),excel_files, value=TRUE)), sheet=1, header=TRUE, startCol=2, startRow=8, endRow=8, colTypes="character")
+involuntheaders <- names(involuntheaders)
+
+maleinvoluntheaders <-readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[7]),excel_files, value=TRUE)), sheet=2, header=TRUE, startCol=2, startRow=8, endRow=8, colTypes="character")
+maleinvoluntheaders <- names(maleinvoluntheaders)
+femaleinvoluntheaders <-readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[7]),excel_files, value=TRUE)), sheet=3, header=TRUE, startCol=2, startRow=8, endRow=8, colTypes="character")
+femaleinvoluntheaders <- names(femaleinvoluntheaders)
+
+involuntstartrows <- grep("Mar-May 1992", involuntrownames[,1])
+involuntendrows <- grep(lfsdate, involuntrownames[,1])
+
+allclaimantrownames <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[4]),excel_files, value=TRUE)), sheet=1, header=FALSE, startCol=2, endCol=2)
+maleclaimantrownames <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[4]),excel_files, value=TRUE)), sheet=2, header=FALSE, startCol=2, endCol=2)
+femaleclaimantrownames <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[4]),excel_files, value=TRUE)), sheet=3, header=FALSE, startCol=2, endCol=2)
+durationclaimantrownames <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[5]),excel_files, value=TRUE)), sheet=1, header=FALSE, startCol=2, endCol=2)
+
+claimants2rownames <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[14]),excel_files, value=TRUE)), sheet=1, header=FALSE, startCol=1, endCol=1 )
+ageclaimants2rownames <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[6]),excel_files, value=TRUE)), sheet=1, header=FALSE, startCol=1, endCol=1)
+#loneparentclaimantrownames <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[12]),excel_files, value=TRUE)), sheet=2, header=FALSE, startCol=1, endCol=1, startRow=5)
+
+allclaimantstart <- grep("1971 Jan", allclaimantrownames[,1])
+allclaimantend <- grep(claimantdate, allclaimantrownames[,1])
+maleclaimantstart <- grep("1971 Jan", maleclaimantrownames[,1])
+maleclaimantend <- grep(claimantdate, maleclaimantrownames[,1])
+femaleclaimantstart <- grep("1971 Jan", femaleclaimantrownames[,1])
+femaleclaimantend <- grep(claimantdate, femaleclaimantrownames[,1])
+durationclaimantstart <- grep("1997 Apr", durationclaimantrownames[,1])
+durationclaimantend <- grep(claimantdate, durationclaimantrownames[,1])
+
+claimant2start <- grep("1971 Jan", claimants2rownames[,1])
+claimant2end <- grep(claimantdate, claimants2rownames[,1])
+
+ageclaimant2start <- grep("1997 Apr", ageclaimants2rownames[,1])
+ageclaimant2end <- grep(claimantdate, ageclaimants2rownames[,1])
+
+
+
+vacancyrownames <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[11]),excel_files, value=TRUE)), sheet=1, header=FALSE, startCol=1, endCol=1)
+vacancystart <- grep("Apr-Jun 2001", vacancyrownames[,1])
+vacancyend <- grep(vacsdate, vacancyrownames[,1])
+
+
+overall  <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[1]),excel_files, value=TRUE)), sheet=1, header=FALSE, startRow=overallstartrows, endRow=overallendrows)
+maleallage  <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[1]),excel_files, value=TRUE)), sheet=2, header=FALSE, startRow=overallstartrows, endRow=overallendrows)
+femaleallage  <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[1]),excel_files, value=TRUE)), sheet=3, header=FALSE, startRow=overallstartrows, endRow=overallendrows)
+names(overall) <- c("Date", overallheaders)
+names(maleallage) <- c("Date", maleoverallheaders)
+names(femaleallage) <- c("Date", femaleoverallheaders)
+
+# workage  <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[1]),excel_files, value=TRUE)), sheet=1, header=FALSE, startRow=overallstartrows[4], endRow=overallendrows[4])
+# male_workage  <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[1]),excel_files, value=TRUE)), sheet=1, header=FALSE, startRow=overallstartrows[5], endRow=overallendrows[5])
+# female_workage  <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[1]),excel_files, value=TRUE)), sheet=1, header=FALSE, startRow=overallstartrows[6], endRow=overallendrows[6])
+#
+unemall  <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[10]),excel_files, value=TRUE)), sheet=1, header=FALSE, startRow=duration_ilostartrows, endRow=duration_iloendrows)
+# unem1824  <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[10]),excel_files, value=TRUE)), sheet=1, header=FALSE, startRow=duration_ilostartrows[4], endRow=duration_iloendrows[4])
+#
+names(unemall) <- c("Date", duration_iloheaders)
+
+youth  <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[2]),excel_files, value=TRUE)), sheet=1, header=FALSE, startRow=youthstartrows, endRow=youthendrows)
+names(youth) <- c("Date", youthheaders)
+
+claimants <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[4]),excel_files, value=TRUE)), sheet=1, header=FALSE, startRow=allclaimantstart, endRow=allclaimantend, colTypes=c(rep("character",2),rep("numeric",6)))
+claimants_thousands <- data.frame(lapply(claimants[,c(3,5,6,7)], FUN=function(x)(x*1000)))
+male_claimants <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[4]),excel_files, value=TRUE)), sheet=2, header=FALSE, startRow=maleclaimantstart, endRow=maleclaimantend, colTypes=c(rep("character",2),rep("numeric",6)))
+male_claimants_thousands <- data.frame(lapply(male_claimants[,c(3,5,6,7)], FUN=function(x)(x*1000)))
+female_claimants <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[4]),excel_files, value=TRUE)), sheet=3, header=FALSE, startRow=femaleclaimantstart, endRow=femaleclaimantend, colTypes=c(rep("character",2),rep("numeric",6)))
+female_claimants_thousands <- data.frame(lapply(female_claimants[,c(3,5,6,7)], FUN=function(x)(x*1000)))
+duration_claimants <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[5]),excel_files, value=TRUE)), sheet=1, header=FALSE, startRow=durationclaimantstart, endRow=durationclaimantend)
+
+claimants2 <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[14]),excel_files, value=TRUE)), sheet=1, header=FALSE, startRow=claimant2start, endRow=claimant2end, colTypes=c(rep("character",1),rep("numeric",17)))
+claimants2_thousands <- data.frame(lapply(claimants2[,c(2:5, 8:11, 14:17)], FUN=function(x)(x*1000)))
+claimants_thousands[,1] <- claimants2_thousands[,4]
+male_claimants_thousands[,1] <- claimants2_thousands[,8]
+female_claimants_thousands[,1] <- claimants2_thousands[,12]
+
+ageclaimants2 <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[6]),excel_files, value=TRUE)), sheet=1, header=FALSE, startRow=ageclaimant2start, endRow=ageclaimant2end, colTypes=c(rep("character",1),rep("numeric",22)))
+ageclaimants2_thousands <- data.frame(lapply(ageclaimants2[,c(2, 4:7, 9:12, 14:17, 19:22)], FUN=function(x)(x*1000)))
+
+###
+loneparent_claimants <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[12]),excel_files, value=TRUE)), sheet=2, header=FALSE, startRow=5, colTypes=c("POSIXt", rep("numeric",7)), dateTimeFormat="%Y-%m-%d %H:%M:%S")
+loneparent_claimants <- na.trim(loneparent_claimants)
+
+
+bens_claimants <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[13]),excel_files, value=TRUE)), sheet=1, header=FALSE, startCol =4, startRow=6, colTypes=rep("numeric",5))
+bens_claimants <- na.trim(bens_claimants)
+###
+
+involunt_emp <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[7]),excel_files, value=TRUE)), sheet=1, header=FALSE, startRow=involuntstartrows, endRow=involuntendrows)
+names(involunt_emp) <- c("Date", involuntheaders)
+maleinvolunt_emp <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[7]),excel_files, value=TRUE)), sheet=2, header=FALSE, startRow=involuntstartrows, endRow=involuntendrows)
+names(maleinvolunt_emp) <- c("Date", maleinvoluntheaders)
+femaleinvolunt_emp <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[7]),excel_files, value=TRUE)), sheet=3, header=FALSE, startRow=involuntstartrows, endRow=involuntendrows)
+names(femaleinvolunt_emp) <- c("Date", femaleinvoluntheaders)
+
+
+hours <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[8]),excel_files, value=TRUE)), sheet=1, header=FALSE, startRow=hourstartrows, endRow=hourendrows)
+names(hours) <- c("Date", hourheaders)
+male_hours <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[8]),excel_files, value=TRUE)), sheet=2, header=FALSE, startRow=hourstartrows, endRow=hourendrows)
+names(male_hours) <- c("Date", malehourheaders)
+female_hours <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[8]),excel_files, value=TRUE)), sheet=3, header=FALSE, startRow=hourstartrows, endRow=hourendrows)
+names(female_hours) <- c("Date", femalehourheaders)
+
+inactivity <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[9]),excel_files, value=TRUE)), sheet=1, header=FALSE, startRow=(inactstartrows[1]+12), endRow=inactendrows[1])
+names(inactivity) <- c("Date", inactheaders)
+#duration_ilo <- unemall
+duration_ilo <- unemall
+
+vacancies <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[11]),excel_files, value=TRUE)), sheet=1, header=FALSE, startRow=vacancystart, endRow=vacancyend, colTypes=c(rep("character",2), rep("numeric",3)))
+#regions
+regionstocks <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[3]),excel_files, value=TRUE)), sheet=1, header=FALSE, startRow=regionstartrows[1], endRow=regionendrows[1])
+regionstocks <- regionstocks[c(1,2,4,6,7,9:12,16,18,22,24),c(1,2,4,7,9,12,14,17,19)]
+regionquarter <- readWorksheetFromFile(paste0(download_address, "/",grep(paste0("^",needed_files[3]),excel_files, value=TRUE)), sheet=1, header=FALSE, startRow=regionstartrows[2], endRow=regionendrows[2])
+regionquarter <- regionquarter[c(1,2,4,6,7,9:12,16,18,22,24),c(1,2,4,7,9,12,14,17,19)]
+
+
+xlcFreeMemory()
+library(XLConnect)
+library(zoo)
+library(forecast)
+off_flowsloc <- paste(download_address,"/youth_off_flows_", as.character.Date(Sys.Date()), ".xls", sep="")
+download.file("http://www.nomisweb.co.uk/livelinks/3347.xls?namedranges=yes", off_flowsloc, mode="wb")
+youth_off_flows <- readNamedRegionFromFile(off_flowsloc, name = "T1_Data")
+
+# Transform to time series or zoo objects
+zooyoff <- as.zoo(ts(youth_off_flows[,1],start=c(1998,1),frequency = 12))
+stl_zooyoff <- stl(zooyoff[,1], "periodic")
+sa_zooyoff <- as.zoo(rollmean(seasadj(stl_zooyoff),3))
+sum5sa_zooyoff <- lag(rollapply(sa_zooyoff,3,sum),-3) # Now changed to three-month total
+writeWorksheetToFile(paste0(download_address,"/sa_zoo_youth_off.xls"), as.data.frame(sum5sa_zooyoff), sheet="Youth to programmes", rownames="Date")
+
+zoooldoff <- as.zoo(ts(youth_off_flows[,2],start=c(1998,1),frequency = 12))
+stl_zoooldoff <- stl(zoooldoff[,1], "periodic")
+sa_zoooldoff <- as.zoo(rollmean(seasadj(stl_zoooldoff),3))
+sum5sa_zoooldoff <- lag(rollapply(sa_zoooldoff,3,sum),-3) #Changed to 3 month total May 2012
+writeWorksheetToFile(paste0(download_address,"/sa_zoo_old_off.xls"), as.data.frame(sum5sa_zoooldoff), sheet="25+ to programmes", rownames="Date")
+
+# Script to download and seasonally adjust rates for flowing through JSA thresholds
+
+#Load packages
+library(XLConnect)    # Data access to Excel named ranges
+library(zoo)      # Time series package
+library(lattice)  # Graphics to display
+library(forecast)  # Seasonal adjustment and forecasting
+#File location
+file_loc <- paste0(download_address, "/seasonal_pars_data.xls")
+
+# Get file from NOMIS
+download.file("http://www.nomisweb.co.uk/livelinks/1956.xls?namedranges=yes", file_loc, mode="wb")
+# Link to file
+# Import data from excel file
+T1_stocks_durations <- readNamedRegionFromFile(file_loc, name="T1_Data")
+
+colnames(T1_stocks_durations) <- names(readNamedRegionFromFile(file_loc, name="T1_ColHeadings"))
+
+# closes link to Excel file
+# Transform to time series or zoo objects
+test_ts <- as.zoo(ts(T1_stocks_durations,start=c(1985,7),frequency = 12))
+
+#create a duplicate table, lagged by -3 months
+testlag <- lag(test_ts,-3)
+# Create table of original divided by the lagged table, offset by one column
+par1 <- test_ts[,2:6]/testlag[,1:5]
+# Calculate seasonal factors using decomposition method stl() described in Venables and Ripley (Modern Applied Statistics with S)
+par1stltest <- stl(par1[,1], "periodic")
+par2stltest <- stl(par1[,2], "periodic")
+par3stltest <- stl(par1[,3], "periodic")
+par4stltest <- stl(par1[,4], "periodic")
+par5stltest <- stl(par1[,5], "periodic")
+# similar for the 12-month rate
+testlag12 <- lag(test_ts[,1], -12)
+par12 <- test_ts[,5]/testlag12
+par12stltest <- stl(par12, "periodic")
+
+# Use seasadj() function ( Prof RJ Hyndman, Monash University) to produce adjusted series
+seastest1 <- seasadj(par1stltest)
+seastest2 <- seasadj(par2stltest)
+seastest3 <- seasadj(par3stltest)
+seastest4 <- seasadj(par4stltest)
+seastest5 <- seasadj(par5stltest)
+
+seastest_12 <- as.zoo(seasadj(par12stltest))
+
+# Put them all together
+season_pars <-merge.zoo(seastest1, seastest2, seastest3, seastest4, seastest5)
+colnames(season_pars) <- c("Proportion remaining beyond 3 months", "Proportion 3-6 months remaining 6-9 months", "Proportion 6-9 months remaining 9-12 months", "Proportion 9-12 months remaining 12-15 months", "Proportion 12-15 months remaining 15-18 months")
+
+writeWorksheetToFile(paste0(download_address, "/season_pars_out.xlsx"), as.data.frame(season_pars), sheet="Threshold Flows",rownames="Date")
+Claimants <- zooreg(claimants2_thousands[,4], start=c(1971,1), frequency=12)
+Unemployed <- zooreg(overall[,"MGSC"], start=c(1971,2), frequency=12)
+Unemployed_claimant <- merge.zoo(Unemployed, Claimants)
+Unemployed_claimant$Nonclaimants <- Unemployed_claimant$Unemployed - Unemployed_claimant$Claimants
+Unemployed_claimant$Nonclaimantpercent <- Unemployed_claimant$Nonclaimants / Unemployed_claimant$Unemployed
+
+YClaimants <- zooreg(ageclaimants2_thousands[,9], start=c(1997,4), frequency=12)
+YUnemployed <- zooreg(youth[,54], start=c(1992,4), frequency=12)
+YUnemployed_claimant <- merge.zoo(YUnemployed, YClaimants)
+YUnemployed_claimant$Nonclaimants <- YUnemployed_claimant$YUnemployed - YUnemployed_claimant$YClaimants
+YUnemployed_claimant$Nonclaimantpercent <- YUnemployed_claimant$Nonclaimants / YUnemployed_claimant$YUnemployed
+
+
+
+    end.rcode-->
+<!--begin.rcode ggplot_testing, echo=FALSE , message=FALSE
+require(ggplot2)
+require(grid)
+require(zoo)
+require(ggthemes)
+require(scales)
+require(reshape2)
+source("lwi_pal.R")
+library(RCurl)
+library(extrafont)
+loadfonts(device="win")
+#chart 1 Unemployed - need to add L&W estimate
+unemployed.zoo <-zooreg(overall[,"MGSC"], start=c(1971,2), frequency=12)
+maleunemployed.zoo <-tail(zooreg(maleallage[,"MGSD"], start=c(1971,2), frequency=12),25)
+femaleunemployed.zoo <-tail(zooreg(femaleallage[,"MGSE"], start=c(1971,2), frequency=12),25)
+malejsa.cc <- (tail(zooreg(male_claimants_thousands[,1], start=c(1971,1), frequency=12),27))
+femalejsa.cc <- (tail(zooreg(female_claimants_thousands[,1], start=c(1971,1), frequency=12),27))
+malejsadiff <- diff(malejsa.cc, arithmetic=FALSE)
+femalejsadiff <- diff(femalejsa.cc, arithmetic=FALSE)
+maleunemforecast  <- merge.zoo(maleunemployed.zoo, malejsadiff)
+femaleunemforecast  <- merge.zoo(femaleunemployed.zoo, femalejsadiff)
+maleunemforecast[26,1] <- as.numeric(maleunemforecast[25,1])*as.numeric(maleunemforecast[26,2])
+maleunemforecast[27,1] <- as.numeric(maleunemforecast[26,1])*as.numeric(maleunemforecast[27,2])
+femaleunemforecast[26,1] <- as.numeric(femaleunemforecast[25,1])*as.numeric(femaleunemforecast[26,2])
+femaleunemforecast[27,1] <- as.numeric(femaleunemforecast[26,1])*as.numeric(femaleunemforecast[27,2])
+
+
+unemforecast <- maleunemforecast[,1] + femaleunemforecast[,1]
+unemployed <- tail(unemployed.zoo, 25)
+unemployed <- merge(unemforecast, unemployed)
+names(unemployed) <- c("L&W forecast", "ILO unemployed")
+ggplot(data=fortify(unemployed, melt=TRUE), aes(x = Index, y = Value, group=Series, colour=Series)) + 
+  geom_line(size=1) +
+  scale_x_yearmon(format = "%b %Y") + scale_y_continuous(labels=comma) + 
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab(NULL) + 
+  scale_colour_lwi() 
+#windowsFonts(Raleway, Arial = windowsFont("TT Raleway, Arial"))
+ggsave("chart1_mar2016.png", width=100, height=60, units="mm")
+ftpUpload("chart1_mar2016.png", "ftp://stats.learningandwork.org.uk/files/lms_images/chart1_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+#chart 2 Percentage unemployed not claiming JSA
+non_claimant_percent <- tail(Unemployed_claimant[,4],25)
+ggplot(data=fortify(non_claimant_percent, melt=TRUE), aes(x = Index, y = Value, group=1)) + 
+  geom_line(size=1, colour="#ee7e3b") +
+  scale_x_yearmon(format = "%b %Y") + scale_y_continuous(labels=percent) + 
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab(NULL) + scale_colour_lwi() 
+#windowsFonts(Raleway, Arial = windowsFont("TT Raleway, Arial"))
+ggsave("chart2_mar2016.png", width=100, height=60, unit="mm")
+ftpUpload("chart2_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart2_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+
+#chart 3 Long term unemployed youth
+
+unemployedy.zoo <-zooreg(unemall[,c("YBXv","YBXY")], start=c(1992,4), frequency=12)
+unemployedy <- tail(unemployedy.zoo, 25)
+unemployedy <- unemployedy[,1] + unemployedy[,2]
+duration_claimants.zoo <- zooreg(duration_claimants[,3:39], start=c(1997,4), frequency=12)
+duration_claimants_tail <- tail(duration_claimants.zoo,27)
+youth_lt_claimants <- duration_claimants_tail[,c(14,17)] 
+youth_lt_claimants <- (youth_lt_claimants[,1] + youth_lt_claimants[,2])*1000
+youth_lt <- merge(unemployedy,youth_lt_claimants)
+names(youth_lt) <- c("ILO unemployed", "JSA claimants")
+ggplot(data=fortify(youth_lt, melt=TRUE), aes(x = Index, y = Value, colour=Series)) + 
+  geom_line(size=1) +
+  scale_x_yearmon(format = "%b %Y") + 
+  scale_y_continuous(limits=c(0, max(fortify(youth_lt, melt=TRUE)[,3])),labels=comma)+ 
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab(NULL) + scale_colour_lwi() 
+ggsave("chart3_mar2016.png", width=100, height=60, unit="mm")
+ftpUpload("chart3_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart3_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+
+#chart 4 Long term unemployed adults
+
+unemployed25.zoo <-zooreg(unemall[,c("YBYN", "YBZC")], start=c(1992,4), frequency=12)
+unemployedo <- tail(unemployed25.zoo, 25)
+unemployedo <- unemployedo[,1] + unemployedo[,2]
+
+old_lt_claimants <- duration_claimants_tail[,c(28,37)] 
+old_lt_claimants <- (old_lt_claimants[,1] + old_lt_claimants[,2])*1000
+old_lt <- merge(unemployedo,old_lt_claimants)
+names(old_lt) <- c("ILO unemployed", "JSA claimants")
+ggplot(data=fortify(old_lt, melt=TRUE), aes(x = Index, y = Value, colour=Series)) + 
+  geom_line(size=1) +
+  scale_x_yearmon(format = "%b %Y") + 
+  scale_y_continuous(limits=c(0, max(fortify(old_lt, melt=TRUE)[,3])),labels=comma)+ 
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab(NULL) + scale_colour_lwi() 
+ggsave("chart4_mar2016.png", width=100, height=60, unit="mm")
+ftpUpload("chart4_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart4_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+#chart 5 Unemployment rates by age
+unemployedyr.zoo <-zooreg(unemall[,"YBVQ"], start=c(1992,4), frequency=12)
+unemployed25r.zoo <-zooreg(unemall[,c("MGXB", "YBVW")], start=c(1992,4), frequency=12)
+unemployed_age_rates <- tail(merge(unemployedyr.zoo, unemployed25r.zoo),25)
+names(unemployed_age_rates) <- c("18-24", "25-49", "50 and over")
+ggplot(data=fortify(unemployed_age_rates, melt=TRUE), aes(x = Index, y = Value, colour=Series)) + 
+  geom_line(size=1) +
+  scale_x_yearmon(format = "%b %Y") + 
+  scale_y_continuous(limits=c(0, max(fortify(unemployed_age_rates, melt=TRUE)[,3])),labels=comma)+ 
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab(NULL) + scale_colour_lwi() 
+ggsave("chart5_mar2016.png", width=100, height=60, unit="mm")
+ftpUpload("chart5_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart5_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+
+#chart 6 Youth not in employment or full-time ed
+
+ypnfte <- tail(zooreg(youth[,c(54, 55)],start=c(1992,4), frequency=12),25)
+ypnfte <- ypnfte[,1]+ ypnfte[,2]
+ggplot(data=fortify(ypnfte, melt=TRUE), aes(x = Index, y = Value)) + 
+  geom_line(size=1, colour="#ee7e3b") +
+  scale_x_yearmon(format = "%b %Y") + 
+  scale_y_continuous(labels=comma)+ 
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab(NULL) + scale_colour_lwi() 
+ggsave("chart6_mar2016.png", width=100, height=60, unit="mm")
+ftpUpload("chart6_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart6_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+# chart 7 Youth unemployment
+
+unemy <- tail(zooreg(youth[,46], start=c(1992,4), frequency=12),25)
+claimanty <- (tail(zooreg(ageclaimants2_thousands[,9], start=c(1997,4), frequency=12),27))
+yunem <- merge(unemy, claimanty)
+names(yunem) <- c("ILO unemployed", "JSA claimants")
+ggplot(data=fortify(yunem, melt=TRUE), aes(x = Index, y = Value, colour=Series)) + 
+  geom_line(size=1) +
+  scale_x_yearmon(format = "%b %Y") + 
+  scale_y_continuous(limits=c(0, max(fortify(yunem, melt=TRUE)[,3])),labels=comma)+ 
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab(NULL) + scale_colour_lwi() 
+ggsave("chart7_mar2016.png", width=100, height=60, unit="mm")
+ftpUpload("chart7_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart7_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+
+# chart 8 JSA claimant count
+
+jsa.cc <- (tail(zooreg(claimants2[,5], start=c(1971,1), frequency=12),25))*1000
+ggplot(data=fortify(jsa.cc, melt=TRUE), aes(x = Index, y = Value)) + 
+  geom_line(size=1, colour="#ee7e3b") +
+  scale_x_yearmon(format = "%b %Y") + 
+  scale_y_continuous(labels=comma)+ 
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab(NULL) + scale_colour_lwi() 
+ggsave("chart8_mar2016.png", width=100, height=60, unit="mm")
+ftpUpload("chart8_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart8_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+
+#chart 9 JSA new claims and leavers
+
+jsa.flow <- (tail(zooreg(claimants[,5:6], start=c(1971,1), frequency=12),25))*1000
+names(jsa.flow) <- c("New claims", "Leavers")
+ggplot(data=fortify(jsa.flow, melt=TRUE), aes(x = Index, y = Value, colour=Series)) + 
+  geom_line(size=1) +
+  scale_x_yearmon(format = "%b %Y") + 
+  scale_y_continuous(labels=comma)+ 
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab(NULL) + scale_colour_lwi() 
+ggsave("chart9_mar2016.png", width=100, height=60, unit="mm")
+ftpUpload("chart9_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart9_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+
+#chart 10 JSA leavers rate
+jsa.flow2 <- (tail(zooreg(claimants[,c(3,5:6)], start=c(1971,1), frequency=12),26))*1000
+leaver.rate <- jsa.flow2[,3]/(lag(jsa.flow2[,1],-1) + jsa.flow2[,2])
+ggplot(data=fortify(leaver.rate, melt=TRUE), aes(x = Index, y = Value)) + 
+  geom_line(size=1, colour="#ee7e3b") +
+  scale_x_yearmon(format = "%b %Y") + 
+  scale_y_continuous(labels=percent)+ 
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab(NULL) + scale_colour_lwi() 
+ggsave("chart10_mar2016.png", width=100, height=60, unit="mm")
+ftpUpload("chart10_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart10_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+
+#chart 11 Threshold flows
+
+thresholds <- tail(season_pars,25)
+names(thresholds) <- c("New claimants staying to 3 months", 
+                       "3-6 months staying to 6-9 months", 
+                       "6-9 months staying to 9-12 months",
+                       "9-12 months staying to 12-15 months",
+                       "12-15 months staying to 15-18 months")
+p <- ggplot(data=fortify(thresholds, melt=TRUE), aes(x = Index, y = Value, colour=Series)) + 
+  geom_line(size=1) +
+  scale_x_yearmon(format = "%b %Y") + 
+  scale_y_continuous(labels=percent)+ 
+  guides(colour= guide_legend(title=NULL, nrow=3, byrow=TRUE)) +
+  theme_economist_white(base_size=5, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab(NULL) + scale_colour_lwi() + 
+  theme(legend.margin=unit(-0.1,"cm"), legend.background = element_rect(fill=NA),legend.text = element_text(size = rel(1.0), lineheight = 1))
+ggsave("chart11_mar2016.png", p, width=100, height=60, unit="mm")
+ftpUpload("chart11_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart11_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+
+#chart 12 Threshold flows (2)
+col1 <- thresholds[,1]
+col2 <- lag(thresholds[,2], 3)* thresholds[,1]
+col3 <- lag(thresholds[,3],6) *lag(thresholds[,2], 3)* thresholds[,1]
+col4 <- lag(thresholds[,4],9) * lag(thresholds[,3],6) *lag(thresholds[,2], 3)* thresholds[,1]
+col5 <- lag(thresholds[,5],12) *lag(thresholds[,4],9) * lag(thresholds[,3],6) *lag(thresholds[,2], 3)* thresholds[,1]
+cumthresholds <- merge(col1, col2, col3, col4, col5)
+cumthresholds <- as.data.frame(t(cumthresholds))
+cumthresholds <- cumthresholds[,c(13,16,19,22,25)]
+names(cumthresholds) <- dates_for_thresholds
+rownames(cumthresholds) <- c("New claimants \nstaying to 3 \nmonths",
+                             "New claimants \nstaying to 6-9 \nmonths",
+                             "New claimants \nstaying to 9-12 \nmonths",
+                             "New claimants \nstaying to 12-15 \nmonths",
+                             "New claimants \nstaying to 15-18 \nmonths")
+cumthresholds$`Aug 1991` <- c(0.6188826001427, 0.4351983647231, 0.3199537013450,	0.2431893649297,	0.1908346923862
+)
+cumthresholds$`Jan 2008` <- c(0.4191836714832, 0.2112580981335, 0.1122545263060,	0.0781573350080,	0.0592892049914
+)
+cumthresholds$group <- factor(row.names(cumthresholds), levels=c("New claimants \nstaying to 3 \nmonths",
+                                                                 "New claimants \nstaying to 6-9 \nmonths",
+                                                                 "New claimants \nstaying to 9-12 \nmonths",
+                                                                 "New claimants \nstaying to 12-15 \nmonths",
+                                                                 "New claimants \nstaying to 15-18 \nmonths"))
+cumthresholds2 <- melt(cumthresholds, id.vars="group")
+p <- ggplot(data=cumthresholds2, aes(x = group, y = value, group=variable, colour=variable)) + 
+  geom_line(size=1) + geom_point(size=2) +
+  scale_y_continuous(labels=percent, breaks=seq(.1, .6, by=.1))+ 
+  guides(colour= guide_legend(title=NULL, nrow=2, byrow=TRUE)) +
+  theme_economist_white(base_size=5, base_family="Raleway", gray_bg = FALSE) + 
+  scale_colour_lwi() +
+  xlab(NULL) + ylab(NULL) + 
+  theme(legend.margin=unit(-0.1,"cm"), legend.text = element_text(size = rel(1.0), lineheight = 0.4))
+ggsave("chart12_mar2016.png", p, width=100, height=60, unit="mm")
+ftpUpload("chart12_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart12_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+
+#chart 13 Vacancies
+
+vacs <- (tail(zooreg(vacancies[,3], start=c(2001,5), frequency=12),25))*1000
+ggplot(data=fortify(vacs, melt=TRUE), aes(x = Index, y = Value)) + 
+  geom_line(size=1, colour="#ee7e3b") +
+  scale_x_yearmon(format = "%b %Y") + 
+  scale_y_continuous(labels=comma)+ 
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab(NULL) + scale_colour_lwi() 
+ggsave("chart13_mar2016.png", width=100, height=60, unit="mm")
+ftpUpload("chart13_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart13_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+
+
+#chart 14 Unemployed per vacancy
+
+upv <- (tail(zooreg(vacancies[,5], start=c(2001,5), frequency=12),25))
+upv <- merge(unemployed[,1],upv)
+upv_forecast <- upv[,2]
+upv_forecast[26] <-as.numeric(unemployed[26,1])/as.numeric(vacs[25])
+upv <- merge(upv_forecast, upv[,2])
+
+names(upv) <- c("L&W forecast", "Unemployed per vacancy")
+ggplot(data=fortify(upv, melt=TRUE), aes(x = Index, y = Value, colour=Series)) + 
+  geom_line(size=1) +
+  scale_x_yearmon(format = "%b %Y") + 
+  scale_y_continuous(labels=comma)+ 
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab(NULL) + scale_colour_lwi() 
+ggsave("chart14_mar2016.png", width=100, height=60, unit="mm")
+ftpUpload("chart14_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart14_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+
+#chart 15 Employment number
+
+empno <- tail(zooreg(overall[,"MGRZ"], start=c(1971,2), frequency=12),25)
+ggplot(data=fortify(empno, melt=TRUE), aes(x = Index, y = Value)) + 
+  geom_line(size=1, colour="#ee7e3b") +
+  scale_x_yearmon(format = "%b %Y") + 
+  scale_y_continuous(labels=comma)+ 
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab(NULL) + scale_colour_lwi() 
+ggsave("chart15_mar2016.png", width=100, height=60, unit="mm")
+ftpUpload("chart15_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart15_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+
+
+#chart 16 Employment rate
+
+emprate <- (tail(zooreg((overall[,"LF24"]/100), start=c(1971,2), frequency=12),25))
+ggplot(data=fortify(emprate, melt=TRUE), aes(x = Index, y = Value)) + 
+  geom_line(size=1, colour="#ee7e3b") +
+  scale_x_yearmon(format = "%b %Y") + 
+  scale_y_continuous(labels=percent)+ 
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab(NULL) + scale_colour_lwi() 
+ggsave("chart16_mar2016.png", width=100, height=60, unit="mm")
+ftpUpload("chart16_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart16_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+
+#chart 17 Econ inactive/ESA/IB
+
+inact_dis <- zooreg(inactivity[,"LF69"], start=c(1993,4), frequency=12)
+bens_esaib <- zooreg(bens_claimants[,3], start=c(1999,3), frequency=4)
+esa_ee <- zooreg(esa_ib_ee*1000, start=eestart, frequency=12)
+
+inact_dis_bens <- merge(inact_dis, bens_esaib*1000, esa_ee)
+inact_dis_bens$ESAIB <- lag(inact_dis_bens[,2],-1) 
+inact_dis_bens$ESAIB <- ifelse.zoo(!is.na(inact_dis_bens$ESAIB), inact_dis_bens$ESAIB, inact_dis_bens$esa_ee)
+index_base <- as.numeric(inact_dis_bens[224,])
+inact_dis_bens$inact_index <- (inact_dis_bens[,1]/index_base[1])*100
+inact_dis_bens$claim_index <- (inact_dis_bens[,4]/index_base[4])*100
+
+inact_dis_bens_tail <- tail(inact_dis_bens,27)
+names(inact_dis_bens_tail) <- c(
+  "Inactive, long term sick or disabled",
+  "ESA or IB claimants",
+  "ESA early estimates",
+  "Combined ESA or IB claimants",
+  "Inactive, long term sick", 
+  "Incapacity/ESA benefits claimants")
+c17 <- ggplot(data=fortify(inact_dis_bens_tail[,5:6], melt=TRUE), aes(x = Index, y = Value, colour=Series)) + 
+  geom_line(size=1) +
+  geom_point(size=2) + 
+  scale_x_yearmon(format = "%b %Y") + 
+  scale_y_continuous(labels=comma) + 
+  guides(colour= guide_legend(title=NULL, nrow=2, byrow=TRUE)) +
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab("Index: Oct-Dec 2011 = 100") + 
+  scale_colour_lwi() 
+ggsave("chart17_mar2016.png", c17, width=100, height=60, unit="mm")
+ftpUpload("chart17_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart17_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+
+#chart 18 Econ inactive/lone parent benefits
+inact_parent <- zooreg(inactivity[,"LF65"], start=c(1993,4), frequency=12)
+bens_islp <- zooreg(bens_claimants[,4], start=c(1999,3), frequency=4)
+islp_ee <- zooreg(is_lp_ee*1000, start=eestart, frequency=12)
+jsalp <- zooreg(loneparent_claimants[,3], start=c(2005,4), frequency=12)
+inact_parent2 <- merge(inact_parent, bens_islp*1000, islp_ee, jsalp)
+inact_parent2$ISLP <- lag(inact_parent2[,2],-1) 
+inact_parent2$ISLP <- ifelse.zoo(!is.na(inact_parent2$ISLP), inact_parent2$ISLP, inact_parent2$islp_ee)
+inact_parent2$LP_claimants <- inact_parent2[,4] + inact_parent2[,5]
+
+index_base_lp <- as.numeric(inact_parent2[224,])
+inact_parent2$inact_index <- (inact_parent2[,1]/index_base_lp[1])*100
+inact_parent2$claim_index <- (inact_parent2[,6]/index_base_lp[6])*100
+
+inact_parent_tail <- tail(inact_parent2,27)
+names(inact_parent_tail) <- c(
+  "Inactive, look after family",
+  "IS lone parents",
+  "ISlp early estimates",
+  "JSA lone parents",
+  "Combined IS lone parents",
+  "Combined JSA and IS claimants",
+  "Inactive, looking after family,home", 
+  "Lone parents claiming benefits (IS+JSA)")
+c18 <- ggplot(data=fortify(inact_parent_tail[,7:8], melt=TRUE), aes(x = Index, y = Value, colour=Series)) + 
+  geom_line(size=1) +
+  geom_point(size=2) + 
+  scale_x_yearmon(format = "%b %Y") + 
+  scale_y_continuous(labels=comma) + 
+  guides(colour= guide_legend(title=NULL, nrow=2, byrow=TRUE)) +
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab("Index: Oct-Dec 2011 = 100") + 
+  scale_colour_lwi() 
+ggsave("chart18_mar2016.png", c18, width=100, height=60, unit="mm")
+ftpUpload("chart18_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart18_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+#chart 19 Regional employment rate change
+
+regionemp <- regionquarter[,c(1,5)]
+regionemp[,2] <- regionemp[,2]/100
+names(regionemp) <- c("Region", "Employment rate change")
+regionemp$Region <- factor(regionemp$Region)
+regionemp$Region <- reorder(regionemp[,1], regionemp[,2])
+ggplot(regionemp, aes(x=Region, y=`Employment rate change`)) + 
+  geom_bar(stat="identity", fill="#ee7e3b") +
+  coord_flip()+ 
+  scale_y_continuous(labels=percent)+ 
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE,horizontal=FALSE) + 
+  xlab(NULL) + ylab(NULL) + scale_fill_lwi() 
+ggsave("chart19_mar2016.png", width=100, height=60, unit="mm")
+ftpUpload("chart19_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart19_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+#chart 20 Regional unemployment rate change
+
+regionunemp <- regionquarter[,c(1,7)]
+regionunemp[,2] <- regionunemp[,2]/100
+names(regionunemp) <- c("Region", "Unemployment rate change")
+regionunemp$Region <- factor(regionunemp$Region)
+regionunemp$Region <- reorder(regionunemp[,1], regionunemp[,2])
+ggplot(regionunemp, aes(x=Region, y=`Unemployment rate change`)) + 
+  geom_bar(stat="identity", fill="#ee7e3b") +
+  coord_flip()+ 
+  scale_y_continuous(labels=percent)+ 
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE,horizontal=FALSE) + 
+  xlab(NULL) + ylab(NULL) + scale_fill_lwi() 
+ggsave("chart20_mar2016.png", width=100, height=60, unit="mm")
+ftpUpload("chart20_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart20_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+#chart 21 Regional inactivity rate change
+
+regioninact <- regionquarter[,c(1,9)]
+regioninact[,2] <- regioninact[,2]/100
+names(regioninact) <- c("Region", "Inactivity rate change")
+regioninact$Region <- factor(regioninact$Region)
+regioninact$Region <- reorder(regioninact[,1], regioninact[,2])
+ggplot(regioninact, aes(x=Region, y=`Inactivity rate change`)) + 
+  geom_bar(stat="identity", fill="#ee7e3b") +
+  coord_flip()+ 
+  scale_y_continuous(labels=percent)+ 
+  theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE,horizontal=FALSE) + 
+  xlab(NULL) + ylab(NULL) + scale_fill_lwi() 
+ggsave("chart21_mar2016.png", width=100, height=60, unit="mm")
+ftpUpload("chart21_mar2016.png", "ftp://stats.learningandwork.org.uk:21/files/lms_images/chart21_mar2016.png", userpwd ="stats:TwelveHorribleMonkeys")
+
+
+
+    end.rcode-->
+    
+    
+<!--begin.rcode output_data, echo=FALSE , message=FALSE
+xlcFreeMemory()
+# 
+wb <- loadWorkbook(paste0(template_address, "/", "UK inclusion analysis.xlsx"))
+#createSheet(wb, name="Test")
+# # setStyleAction(wb,XLC$"STYLE_ACTION.NONE")
+setForceFormulaRecalculation(wb, sheet = 1:23, TRUE)
+#Unemployment (ILO)
+writeWorksheet(wb,overall[,"MGSC"], sheet="Unemployment (ILO)", startRow=8, startCol=3, header=FALSE)
+writeWorksheet(wb,maleallage[,"MGSD"], sheet="Unemployment (ILO)", startRow=8, startCol=4, header=FALSE)
+writeWorksheet(wb,femaleallage[,"MGSE"], sheet="Unemployment (ILO)", startRow=8, startCol=5, header=FALSE)
+#Unemployment rate (ILO)
+writeWorksheet(wb,overall[,"MGSX"], sheet="Unemployment rate (ILO)", startRow=8, startCol=3, header=FALSE)
+writeWorksheet(wb,maleallage[,"MGSY"], sheet="Unemployment rate (ILO)", startRow=8, startCol=4, header=FALSE)
+writeWorksheet(wb,femaleallage[,"MGSZ"], sheet="Unemployment rate (ILO)", startRow=8, startCol=5, header=FALSE)
+#Unemployment rates by age
+##TODO"
+writeWorksheet(wb,unemall[,"MGVI"], sheet="Unemployment rates by age", startRow=10, startCol=2, header=FALSE)
+writeWorksheet(wb,unemall[,"MGXB"], sheet="Unemployment rates by age", startRow=10, startCol=3, header=FALSE)
+writeWorksheet(wb,unemall[,"YBVN"], sheet="Unemployment rates by age", startRow=10, startCol=4, header=FALSE)
+writeWorksheet(wb,unemall[,"YBVQ"], sheet="Unemployment rates by age", startRow=10, startCol=5, header=FALSE)
+writeWorksheet(wb,unemall[,"YBVT"], sheet="Unemployment rates by age", startRow=10, startCol=6, header=FALSE)
+writeWorksheet(wb,unemall[,"YBVW"], sheet="Unemployment rates by age", startRow=10, startCol=7, header=FALSE)
+
+#Long-term unemployment
+writeWorksheet(wb,data.frame(unemall[,"YBXV"]+ unemall[,"YBXY"])[,1], sheet="Long-term unemployment", startRow=21, startCol=2, header=FALSE)
+writeWorksheet(wb,data.frame(unemall[,"YBYN"]+ unemall[,"YBZC"])[,1], sheet="Long-term unemployment", startRow=21, startCol=3, header=FALSE)
+writeWorksheet(wb,data.frame((duration_claimants[,16]+ duration_claimants[,19])*1000)[,1], sheet="Long-term unemployment", startRow=81, startCol=4, header=FALSE)
+writeWorksheet(wb,as.data.frame(sum5sa_zooyoff)[,1], sheet="Long-term unemployment", startRow=95, startCol=5, header=FALSE)
+writeWorksheet(wb,data.frame((duration_claimants[,28]+ duration_claimants[,37])*1000)[,1], sheet="Long-term unemployment", startRow=81, startCol=9, header=FALSE)
+writeWorksheet(wb,as.data.frame(sum5sa_zoooldoff)[,1], sheet="Long-term unemployment", startRow=95, startCol=10, header=FALSE)
+# 
+# 
+#Employment
+writeWorksheet(wb,overall[,"MGRZ"], sheet="Employment", startRow=9, startCol=2, header=FALSE)
+writeWorksheet(wb,overall[,"LF24"], sheet="Employment", startRow=9, startCol=3, header=FALSE)
+writeWorksheet(wb,maleallage[,"MGSA"], sheet="Employment", startRow=9, startCol=6, header=FALSE)
+writeWorksheet(wb,femaleallage[,"MGSB"], sheet="Employment", startRow=9, startCol=7, header=FALSE)
+#Employment rate
+writeWorksheet(wb,overall[,"MGRZ"], sheet="Employment rate", startRow=9, startCol=3, header=FALSE)
+writeWorksheet(wb,overall[,"LF24"], sheet="Employment rate", startRow=9, startCol=4, header=FALSE)
+writeWorksheet(wb,femaleallage[,"MGSB"], sheet="Employment rate", startRow=9, startCol=7, header=FALSE)
+writeWorksheet(wb,femaleallage[,"LF25"], sheet="Employment rate", startRow=9, startCol=8, header=FALSE)
+writeWorksheet(wb,maleallage[,"MGSB"], sheet="Employment rate", startRow=9, startCol=9, header=FALSE)
+writeWorksheet(wb,maleallage[,"MGSV"], sheet="Employment rate", startRow=9, startCol=10, header=FALSE)
+#Inactivity rate
+writeWorksheet(wb,overall[,"LF2M"], sheet="Inactivity rate", startRow=9, startCol=2, header=FALSE)
+writeWorksheet(wb,overall[,"LF22"], sheet="Inactivity rate", startRow=9, startCol=3, header=FALSE)
+writeWorksheet(wb,maleallage[,"YBSO"], sheet="Inactivity rate", startRow=9, startCol=6, header=FALSE)
+writeWorksheet(wb,femaleallage[,"LF2N"], sheet="Inactivity rate", startRow=9, startCol=7, header=FALSE)
+# 
+#"JSA claimant count"
+# writeWorksheet(wb,data.frame(lapply(claimants[,3], FUN=function(x)(x*1000))), sheet="JSA claimant count", startRow=8, startCol=3, header=FALSE)
+# writeWorksheet(wb,data.frame(lapply(male_claimants[,3], FUN=function(x)(x*1000))), sheet="JSA claimant count", startRow=8, startCol=5, header=FALSE)
+# writeWorksheet(wb,data.frame(lapply(female_claimants[,3], FUN=function(x)(x*1000))), sheet="JSA claimant count", startRow=8, startCol=6, header=FALSE)
+# writeWorksheet(wb,claimants[,4], sheet="JSA claimant count", startRow=8, startCol=7, header=FALSE)
+# 
+#JSA new claims and leavers
+writeWorksheet(wb,data.frame(lapply(claimants[,5], FUN=function(x)(x*1000))), sheet="JSA new claims and leavers", startRow=8, startCol=3, header=FALSE)
+writeWorksheet(wb,data.frame(lapply(claimants[,6], FUN=function(x)(x*1000))), sheet="JSA new claims and leavers", startRow=8, startCol=4, header=FALSE)
+# 
+#Long-term unemployment rate
+writeWorksheet(wb,as.data.frame(season_pars), sheet="Long-term unemployment rate", startRow=9, startCol=2, header=FALSE)
+
+#Starters getting long term JSA
+writeWorksheet(wb,as.data.frame(season_pars), sheet="Starters getting long term JSA", startRow=9, startCol=2, header=FALSE)
+
+#ONS vacancies
+writeWorksheet(wb,vacancies[,3], sheet="ONS vacancies", startRow=8, startCol=3, header=FALSE)
+writeWorksheet(wb,vacancies[,5], sheet="ONS vacancies", startRow=10, startCol=8, header=FALSE)
+# 
+#Inactivity
+# writeWorksheet(wb,inactivity[,10], sheet="Inactivity", startRow=11, startCol=2, header=FALSE)
+# writeWorksheet(wb,inactivity[,6], sheet="Inactivity", startRow=11, startCol=3, header=FALSE)
+# 
+
+#Hours (total)
+# writeWorksheet(wb,hours[,2], sheet="Hours (total)", startRow=9, startCol=2, header=FALSE)
+# writeWorksheet(wb,male_hours[,2], sheet="Hours (total)", startRow=9, startCol=5, header=FALSE)
+# writeWorksheet(wb,female_hours[,2], sheet="Hours (total)", startRow=9, startCol=6, header=FALSE)
+# 
+#Average hours
+# writeWorksheet(wb,hours[255:nrow(hours),4], sheet="Average hours", startRow=9, startCol=2, header=FALSE)
+# writeWorksheet(wb,male_hours[255:nrow(male_hours),4], sheet="Average hours", startRow=9, startCol=5, header=FALSE)
+# writeWorksheet(wb,female_hours[255:nrow(female_hours),4], sheet="Average hours", startRow=9, startCol=6, header=FALSE)
+
+#Involuntary part-time
+
+# writeWorksheet(wb,involunt_emp[,18], sheet="Involuntary part-time", startRow=9, startCol=2, header=FALSE)
+# writeWorksheet(wb,involunt_emp[,20], sheet="Involuntary part-time", startRow=9, startCol=3, header=FALSE)
+# writeWorksheet(wb,maleinvolunt_emp[,20], sheet="Involuntary part-time", startRow=9, startCol=6, header=FALSE)
+# writeWorksheet(wb,femaleinvolunt_emp[,20], sheet="Involuntary part-time", startRow=9, startCol=7, header=FALSE)
+# 
+#Youth unemployment
+# writeWorksheet(wb,youth[,14], sheet="Youth unemployment", startRow=19, startCol=2, header=FALSE)
+# writeWorksheet(wb,youth[,9], sheet="Youth unemployment", startRow=19, startCol=3, header=FALSE)
+# writeWorksheet(wb,youth[,15], sheet="Youth unemployment", startRow=19, startCol=5, header=FALSE)
+# 
+# writeWorksheet(wb,youth[,12], sheet="Youth unemployment", startRow=19, startCol=7, header=FALSE)
+# writeWorksheet(wb,youth[,7], sheet="Youth unemployment", startRow=19, startCol=8, header=FALSE)
+# writeWorksheet(wb,youth[,2], sheet="Youth unemployment", startRow=19, startCol=9, header=FALSE)
+# writeWorksheet(wb,duration_claimants[,13], sheet="Youth unemployment", startRow=79, startCol=18, header=FALSE)
+# writeWorksheet(wb,as.data.frame(sum5sa_zooyoff)[,1], sheet="Youth unemployment", startRow=93, startCol=21, header=FALSE)
+#Regional Employment
+writeWorksheet(wb,regionquarter[,5], sheet="Regional Employment", startRow=10, startCol=3, header=FALSE)
+writeWorksheet(wb,regionstocks[,5], sheet="Regional Employment", startRow=10, startCol=4, header=FALSE)
+# 
+#Regional Unemployment
+writeWorksheet(wb,regionquarter[,7], sheet="Regional Unemployment", startRow=10, startCol=3, header=FALSE)
+# writeWorksheet(wb,regionstocks[,7], sheet="Regional Unemployment", startRow=10, startCol=4, header=FALSE)
+
+#Regional Inactivity
+writeWorksheet(wb,regionquarter[,9], sheet="Regional Inactivity", startRow=10, startCol=3, header=FALSE)
+writeWorksheet(wb,regionstocks[,9], sheet="Regional Inactivity", startRow=10, startCol=4, header=FALSE)
+
+saveWorkbook( wb, paste0(template_address, "/", "UK inclusion analysis",as.character.Date(Sys.Date()) ,".xlsx"))
+    end.rcode-->
+
+<table width="550" border="0" align="left" cellpadding="5" cellspacing="0" bgcolor="#FFFFFF" id="bodytable">
+  <tr>
+    <td colspan="2"><img src="http://stats.learningandwork.org.uk/lms_images/646x139-e-flyer-banner-.png" width="646" height="139"></td>
+  </tr>
+  
+  <tr>
+    <td width="22"></td>
+    <td width="526"><strong><span style="font-family:Maven Pro, Raleway, Arial, helvetica, Geneva, sans-serif; font-size:18px; color:#ee7e3b;">Making learning and work count</span></strong><br><br><strong><span style="font-family:Maven Pro, Raleway, Arial, helvetica, Geneva, sans-serif; font-size:18px; color:#ee7e3b;">Labour market LIVE</span> <span style="font-family:Maven Pro, Raleway, Arial, helvetica, Geneva, sans-serif; font-size:18px; color:#264c59;">from Learning and Work Institute <br>
+<!--rinline I(format(Sys.Date(), "%d %B %Y")) --></span></strong> <br>
+        <br>
+         
+
+<ul>
+
+<li><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000;">
+<strong>Unemployment</strong> is 
+<!--rinline I(format(round(tail(overall,1)[,"MGSC"]/1000)*1000,big.mark=",")) -->, 
+<strong>down</strong> 
+<!--rinline I(format(round(diff(tail(overall,2)[,"MGSC"], lag=1)/1000)*1000, big.mark=",")) --> 
+from last month&#146;s published figure (quarterly headline <strong>down</strong> 
+<!--rinline I(format(round(diff(tail(overall,4)[,"MGSC"], lag=3)/1000)*1000, big.mark=",")) -->) 
+and the <strong>unemployment rate</strong> is 
+<!--rinline I(round(tail(overall,1)[,"MGSX"],1)) -->&#37;, 
+<strong>down</strong> 
+<!--rinline I(format(round(diff(tail(overall,2)[,"MGSX"], lag=1),1))) --> 
+percentage points on last month and <strong>down</strong> 
+<!--rinline I(format(round(diff(tail(overall,4)[,"MGSX"], lag=3),1))) --> 
+percentage points on last quarter. </span>
+<li><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000;">
+The number of <strong>claimant unemployed</strong> is 
+<!--rinline I(format(tail(claimants2,1)[,5]*1000,big.mark=",")) -->, 
+<strong>down</strong> 
+<!--rinline I(format(round(diff(tail(claimants2,2)[,5]*1000, lag=1),1), big.mark=",")) -->
+on last month, and the <strong>claimant rate</strong> is 
+<!--rinline I(round(tail(claimants2,1)[,6],1)) -->&#37;. </span>
+<li><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000;">
+The <strong>number of workless young people (not in employment, full-time education or training)</strong> is 
+<!--rinline I(format(round(sum(tail(youth,1)[,c(54, 55)])/1000)*1000,big.mark=",")) -->, 
+<strong>down</strong> 
+<!--rinline I(format(round(diff(rowSums(tail(youth,4)[,c(54, 55)]),lag=3)/1000)*1000, big.mark=",")) -->
+on the quarter, representing 
+<!--rinline I(round(sum(tail(youth,1)[,54, 55])/tail(youth,1)[,44]*100,1)) -->&#37; 
+of the youth population (<strong>down</strong> 
+<!--rinline I(round(diff(rowSums(tail(youth,4)[,c(54, 55)])/tail(youth,4)[,44],lag=3)*100,1)) -->
+percentage points). </span>
+<li><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000;">
+<strong>Youth unemployment (including students)</strong> is 
+<!--rinline I(format(round(tail(youth,1)[,46]/1000)*1000,big.mark=",")) -->, 
+<strong>down</strong> 
+<!--rinline I(format(round(diff(tail(youth,4)[,46]/1000, lag=3))*1000,big.mark=",")) -->
+on the quarter.</span>
+<li><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000;">
+There are 
+<!--rinline I(tail(vacancies,2)[1,7]) -->
+<strong>unemployed people per vacancy</strong>. Learning and Work Institute estimates this figure may fall further next month. </span>
+<li><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000;">
+The <strong>employment rate</strong> is 
+<!--rinline I(round(tail(overall,1)[,"LF24"],1)) -->&#37; 
+(<strong>up</strong> 
+<!--rinline I(round(diff(tail(overall,2)[,"LF24"], lag=1),1)) -->
+percentage points on last month&#146;s published figure and <strong>up</strong> 
+<!--rinline I(round(diff(tail(overall,4)[,"LF24"], lag=3),1)) -->
+percentage points in the preferred quarterly measure). </span>
+</ul>
+
+
+<p style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;"><strong>Learning and Work Institute comment</strong>
+    <br>
+  <br>
+ 
+ The labour market figures published on 
+ <!--rinline I(format(Sys.Date(), "%d %B")) -->
+point to a continuing improvement in the UK labour market with employment rising and unemployment falling substantially. <br>
+  <br>
+Duncan Melville, Chief Economist at Learning and Work Institute, commented: <br>
+<br>
+"The increase in employment and the fall in unemployment in the three months to September to November were both substantial. This continues the pattern seen in recent months. The latest figures for vacancies also increased in the period October to December 2015, following a period when this level had been broadly stable. In short, today's statistics point to an improvement in overall employment prospects in the UK.<br>
+  <br>
+  This improvement has not fed through into rising wage growth or increased inflationary pressures. The growth in average weekly earnings (excluding bonuses, a better measure of underlying trends than total pay) moderated for the fourth month in the row and stood at 1.9&#37; in November. Inflation (on the CPI measure) has been around zero for nearly the whole of 2015. These figures indicate that the Governor of the Bank of England was right in his suggestion yesterday that there is no need for interest rates to rise any time soon."
+<br>
+  <br>
+Employment rose by 267,000 between September to November 2015 and June to August 2015. In the last 12 months employment has grown by 588,000.   <br>
+  <br>
+Unemployment fell by 99,000 between September to November 2015 and June to August 2015 and the unemployment rate fell to 5.1&#37; in the quarter the lowest level for 10 years.    <br>
+  <br>
+ 
+The fall in the claimant count takes account of normal seasonal effects but adjusted figures are not published for local areas. The actual number of claimants, nationally, fell by 1,600 between November and December, compared to the adjusted fall of 4,300. Therefore, it should not be surprising that figures for local areas will show smaller falls compared to the national picture.  
+<br>
+  <br>
+The proportion of people leaving the claimant count (or the &#145;leavers rate&#146;) has risen. At <!--rinline I(round(tail(leaver.rate,1)*100,1))-->&#37;, it is now well below the level in early 2015 of <!--rinline I(round(max(leaver.rate)*100,1))-->&#37;. The number of new claims has fallen . Jobseeker&#146;s Allowance off-flow rates for JSA claimants of most durations reduced, except for increases for the the longest-term group we analyse. Off-flow rates remain at historically high levels. 
+<br>
+  <br>
+ 
+Youth unemployment is showing a quarterly fall. There are still <!--rinline I(format(round(tail(youth,1)[,46]/1000)*1000,big.mark=",")) --> unemployed young people, and <!--rinline I(format(round(tail(YUnemployed,1)[,1]/1000)*1000,big.mark=",")) -->(<!--rinline I(round(tail(youth,1)[,54]/tail(youth,1)[,44]*100,1))-->&#37; of the youth population) who are unemployed and not in full-time education.  <br>
+  <br>
+The proportion of unemployed young people (not counting students) who are not claiming Jobseeker&#146;s Allowance and therefore are not receiving official help with job search is now <!--rinline I(round(tail(YUnemployed_claimant[,4],3)[1]*100,1)) -->&#37; and has risen by 23 percentage points since October 2012. <br>
+  <br>
+ 
+A total of 101,000 were counted as in employment while on &#145;government employment and training programmes&#146;, where the Office for National Statistics continues to count Work Programme (etc.) participants as &#145;in employment&#146; by default. This number fell 3,000 this quarter. Self-employment rose 105,000 this quarter and remains at a historically high proportion of employment. Employee numbers rose 99,000 in the quarter. Involuntary part-time employment fell this quarter by 21,000 to 1.2 million, 14.9&#37; of all part-time workers.The proportion remains more than double that in 2004.
+</td>
+</tr>
+      <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><strong><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;">Chart 1: UK unemployment (ILO)</span>
+            </strong><br>
+            <br>
+            <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;">
+           The latest unemployment figure is 
+           <!--rinline I(format(round(tail(overall,1)[,"MGSC"]/1000)*1000,big.mark=",")) -->. 
+           It has fallen by 
+           <!--rinline I(format(round(diff(tail(overall,2)[,"MGSC"], lag=1)/1000)*1000, big.mark=",")) -->
+           from the figure published last month. On the basis of later claimant count figures, Learning and Work Institute estimates that unemployment may continue to decrease, although this remains highly uncertain. The unemployment rate stayed at 
+           <!--rinline I(round(tail(overall,1)[,"MGSX"],1)) -->&#37;. 
+ <img src="http://stats.learningandwork.org.uk/lms_images/chart1_mar2016.png"  width="580" alt="chart 1">
+           
+             
+            </span>     </td>
+  </tr>
+  
+   <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 2: Percentage unemployed not claiming Jobseeker&#146;s Allowance</strong></span>
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;"><br><br>
+     The proportion of unemployed people not claiming Jobseeker&#146;s Allowance has risen to 
+    <!--rinline I(round(tail((Unemployed_claimant[,4]*100),3),1)[1]) -->&#37;; 
+     (<!--rinline I(format(round((tail((Unemployed_claimant[,3]),3)/1000))[1]*1000, big.mark=",")) -->).
+<br>
+      <br>
+The number and proportion of unemployed people not claiming Jobseeker&#146;s Allowance have been rising since the new Jobseeker&#146;s Allowance sanctions regime started in October 2012.
+<img src="http://stats.learningandwork.org.uk/lms_images/chart2_mar2016.png"  width="580" alt="chart 2">   </span></td>
+  </tr>
+
+
+
+
+
+
+    <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 3: Youth long-term unemployment (six months and over, 18-24)</strong></span><br>
+<br>
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;">
+
+Youth long-term unemployment (which can include students) has risen by 
+<!--rinline I(format(round(tail(diff(unemall[,"YBXY"] + unemall[,"YBXV"],1),1)/1000)*1000, big.mark=",")) -->
+from last month&#146;s figure and is now 
+<!--rinline I(format(round(sum(tail(unemall[,c("YBXY", "YBXV")],1))/1000)*1000, big.mark=",")) -->. 
+<br>
+<br>
+The youth Jobseeker&#146;s Allowance count remains far behind, at 
+<!--rinline I(format(sum(tail(duration_claimants[,c(16,19)],1))*1000, big.mark=",")) -->. 
+The count fell by 
+<!--rinline I(format(tail(diff(duration_claimants[,16] + duration_claimants[,19]),1)*1000, big.mark=",")) -->
+this month. Work Programme participants are included within the count unless they are in paid work. 
+ <img src="http://stats.learningandwork.org.uk/lms_images/chart3_mar2016.png"  width="580" alt="chart 3"> </span></td>
+  </tr>
+  <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 4: Adult long-term unemployment (12 months and over, 25+)
+ 
+
+</strong></span>
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;"><br><br>
+     Adult long-term unemployment on the survey measure is now 
+     <!--rinline I(format(round(sum(tail(unemall[,c("YBYN", "YBZC")],1))/1000)*1000, big.mark=",")) -->. 
+     The claimant count measure is 
+     <!--rinline I(format(sum(tail(duration_claimants[,c(28,37)],1))*1000, big.mark=",")) -->.<br>
+<br>
+
+The number of adults counted as having been on Jobseeker&#146;s Allowance for more than one year has risen from 
+<!--rinline I(format(duration_claimants[170,28] + duration_claimants[170,37]*1000, big.mark=",")) -->
+in May 2011 to 
+<!--rinline I(format(sum(tail(duration_claimants[,c(28,37)],1))*1000, big.mark=",")) -->
+now, a 
+<!--rinline I(round(((sum(tail(duration_claimants[,c(28,37)],1))/(duration_claimants[170,28] + duration_claimants[170,37]))-1)*100,0)) -->&#37; rise.
+<img src="http://stats.learningandwork.org.uk/lms_images/chart4_mar2016.png"  width="580" alt="chart 4"></span></td>
+  </tr>
+    <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 5: Unemployment rates by age
+
+</strong></span><br>
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;"><br>
+      
+    The 18 to 24 year old unemployment rate (including students) is 
+    <!--rinline I(round(tail(unemall[,"YBVQ"],1),1)) -->&#37; 
+    of the economically active &#150; excluding one million economically inactive students from the calculation. The rate for those aged 25 to 49 is 
+    <!--rinline I(round(tail(unemall[,"MGXB"],1),1)) -->&#37;. 
+    For those aged 50 and over it is 
+    <!--rinline I(round(tail(unemall[,"YBVW"],1),1)) -->&#37;. 
+    The quarterly change is up 
+    <!--rinline I(format(round(tail(diff(unemall[,"YBVQ"],3),1)/1000)*1000, big.mark=",")) -->
+    for 18 to 24 year olds, down 
+    <!--rinline I(format(round(tail(diff(unemall[,"MGXB"],3),1)/1000)*1000, big.mark=",")) -->
+    for 25 to 49 year olds, and down 
+    <!--rinline I(format(round(tail(diff(unemall[,"YBVW"],3),1)/1000)*1000, big.mark=",")) -->
+    for the over-50s.
+<img src="http://stats.learningandwork.org.uk/lms_images/chart5_mar2016.png"  width="580" alt="chart 5"></span></td>
+  </tr>
+      <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 6: Young people not in employment, full-time education or training
+</strong></span>
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;"><br><br>
+      
+  The number of out of work young people who are not in full-time education 
+  (<!--rinline I(format(round(sum(tail(youth,1)[,c(54, 55)])/1000)*1000,big.mark=",")) -->)
+  has fallen in the past quarter by 
+  <!--rinline I(format(round(tail(diff(rowSums(youth[,c(54, 55)]),lag=3),1)/1000)*1000, big.mark=",")) -->
+  , or 
+  <!--rinline I(round((tail(diff(rowSums(youth[,c(54, 55)]),lag=3),1)/tail(rowSums(youth[,54:55]),4)[1])*100,2)) -->&#37;. 
+  The fall was largely among the inactive, with the number of unemployed young people not in full-time education or training falling at a lower rate.
+<img src="http://stats.learningandwork.org.uk/lms_images/chart6_mar2016.png"   width="580" alt="chart 6"> </span>   </td>
+  </tr>
+  <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 7: Youth unemployment</strong></span>
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;"><br>
+      
+     <br>
+    The number of unemployed young people has risen by 
+    <!--rinline I(format(round(tail(diff(youth[,46],1)/1000,1))*1000,big.mark=",")) -->    
+    since last month&#146;s figures, to 
+    <!--rinline I(format(round(tail(youth,1)[,46]/1000)*1000,big.mark=",")) -->. 
+    <br><br>
+Meanwhile, the number of young Universal Credit or Jobseeker&#146;s Allowance claimants fell last month by 
+<!--rinline I(format(tail(diff(ageclaimants2_thousands[,9]),1), big.mark=",")) -->, 
+to <!--rinline I(format(round(tail(ageclaimants2_thousands[,9],1),1),big.mark=",")) -->. 
+There are 
+<!--rinline I(format(round(tail(YUnemployed_claimant[,3],3)[1]/1000)*1000,scientific=FALSE, big.mark=",")) -->
+unemployed young people who are not in education, and do not claim Jobseeker&#146;s Allowance, 
+<!--rinline I(round(tail(YUnemployed_claimant[,4],3)[1]*100,1)) -->&#37; 
+of all unemployed young people who are not students.
+<img src="http://stats.learningandwork.org.uk/lms_images/chart7_mar2016.png"   width="580" alt="chart 7"></span></td>
+  </tr>
+  <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 8: Jobseeker&#146;s Allowance &#150; claimant count
+</strong></span>
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;"><br>
+      <br>
+The Jobseeker&#146;s Allowance and Universal Credit claimant acount fell by 
+<!--rinline I(format(round(diff(tail(claimants,2)[,3]*1000, lag=1),1), big.mark=",")) -->
+in October, 
+taking the total to 
+<!--rinline I(format(tail(claimants,1)[,3]*1000,big.mark=",")) -->. 
+In September, 
+the number of lone parents claiming Jobseeker&#146;s Allowance fell by 
+<!--rinline I(format(round(diff(tail(loneparent_claimants,2)[,6], lag=1),1), big.mark=",")) -->. 
+Lone parents with a youngest child aged five or over can only claim Jobseeker&#146;s Allowance, unless they have other reasons for claiming benefit.
+
+<img src="http://stats.learningandwork.org.uk/lms_images/chart8_mar2016.png"  width="580" alt="chart 8"> </span>   </td>
+  </tr>
+  <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 9: Jobseeker&#146;s Allowance &#150; new claims and leavers
+
+</strong></span>
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;"><br>
+      <br>
+     The number of new Jobseeker&#146;s Allowance claims fell by 
+     <!--rinline I(format(diff(tail(claimants,2)[,5]*1000, lag=1), big.mark=",")) -->
+     this month, to 
+     <!--rinline I(format(tail(claimants,1)[,5]*1000, big.mark=",")) -->. 
+     Meanwhile the number of leavers also fell, by 
+     <!--rinline I(format(diff(tail(claimants,2)[,6]*1000, lag=1), big.mark=",")) -->, 
+     to 
+     <!--rinline I(format(tail(claimants,1)[,6]*1000, big.mark=",")) -->.
+
+<img src="http://stats.learningandwork.org.uk/lms_images/chart9_mar2016.png"  width="580" alt="chart 9"> </span></td>
+  </tr>
+  <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 10: Jobseeker&#146;s Allowance &#150; claimant count leavers rate &#150; leavers as percentage of &#145;could leave&#146;
+
+</strong></span>
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;"><br>
+      <br>
+Learning and Work Institute estimates that the &#145;leavers rate&#146; &#150; people who have left the claimant count as a proportion of those who could leave it &#150; has risen to 
+<!--rinline I(round((tail(claimants[,6],1) / (tail(claimants[,3],2)[1] + tail(claimants[,5],1)))*100,1)) -->&#37;.
+
+<img src="http://stats.learningandwork.org.uk/lms_images/chart10_mar2016.png"  width="580" alt="chart 10"> </span></td>
+  </tr>
+ 
+   <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 11: Jobseeker&#146;s Allowance &#150; claimants staying through each three-month threshold (seasonally adjusted)</strong></span>
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;"><br><br>
+   These measures show an improvement for claimants at all lengths of unemployment, except the shortest term.<br>
+             <br>
+The proportion staying beyond three months has risen to 
+<!--rinline I(round(tail(season_pars[,1],1)*100,1)) -->&#37;. 
+Short-term claimants are mainly supported by Jobcentre Plus, although some will be Work Programme participants who have not sustained jobs.
+
+<img src="http://stats.learningandwork.org.uk/lms_images/chart11_mar2016.png"  width="580" alt="chart 11"></span>   </td>
+  </tr>
+   <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 12: Jobseeker&#146;s Allowance &#150; proportion of starters in month becoming longer-term unemployed</strong></span>
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;"><br>
+      <br>
+     The proportion of starters becoming 12-month claimants is now 
+<!--rinline I(round((tail(season_pars[,1],10)[1]* tail(season_pars[,2],7)[1] * tail(season_pars[,3],4)[1] * tail(season_pars[,4],1))*100,1)) -->&#37;.
+     This may rise over the next few months because of the worsening of short-term flow rates in spring 2013. <br>
+<br>
+
+These figures are based on those in Chart 11, but show the patterns of the same people passing through successive quarterly thresholds.
+
+
+<img src="http://stats.learningandwork.org.uk/lms_images/chart12_mar2016.png"  width="580" alt="chart 12"> </span>   </td>
+  </tr>
+  
+  <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong> Chart 13: Vacancies &#150; whole economy survey</strong></span><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;">
+    
+<br>
+             <br>
+            Vacancies (in the Office for National Statistics survey of the whole economy) rose slightly this month, to 
+            <!--rinline I(format(tail(vacancies,1)[,3]*1000,big.mark=",")) -->. 
+            As the number of vacancies is quite volatile, and frequently revised, the Office for National Statistics uses a three-month average.
+            
+<img src="http://stats.learningandwork.org.uk/lms_images/chart13_mar2016.png"  width="580" alt="chart 13">
+</span>    </td>
+  </tr>
+  <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong> Chart 14: Unemployed people per vacancy
+</strong></span>
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;">
+<br>
+             <br>
+             
+    There are 
+    <!--rinline I(tail(vacancies,2)[1,5]) --> 
+    unemployed people per vacancy. Learning and Work Institute estimates this figure may fall slightly next month.
+    
+ <img src="http://stats.learningandwork.org.uk/lms_images/chart14_mar2016.png"  width="580" alt="chart 14">    </span></td>
+  </tr>
+   
+  <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 15: UK employment
+</strong></span>
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;"><br>
+      <br>
+
+Employment rose by 
+<!--rinline I(format(round(diff(tail(overall,2)[,"MGRZ"], lag=1)/1000)*1000, big.mark=",")) -->
+on the figure published last month, to 
+<!--rinline I(format(round(tail(overall,1)[,"MGRZ"]/1000)*1000,big.mark=",")) -->. 
+<img src="http://stats.learningandwork.org.uk/lms_images/chart15_mar2016.png"  width="580" alt="chart 15"> </span></td>
+  </tr>
+  <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 16: Employment rate in the UK
+</strong></span>
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;"><br><br>
+     The employment rate rose by 
+     <!--rinline I(round(diff(tail(overall,4)[,"LF24"], lag=3),1)) -->
+     percentage points over the quarter, to 
+     <!--rinline I(round(tail(overall,1)[,"LF24"],1)) -->&#37;. 
+
+<img src="http://stats.learningandwork.org.uk/lms_images/chart16_mar2016.png"  width="580" alt="chart 16"> </span></td>
+  </tr>
+  <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 17: Claimants for inactive benefits and the economically inactive &#150; inactivity benefits</strong></span><br><br>
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;">
+      The number of people inactive owing to long-term sickness fell, as did the benefit figure. The fall in the benefit figures shows &#145;early estimates&#146; of benefit numbers.
+<br>
+           <br>
+This chart shows claimants of Employment and Support Allowance, and Incapacity Benefit (the blue dots), compared with survey figures for the economically inactive owing to long-term sickness.
+<br>
+             <br>
+The Department for Work and Pensions&#146; figures will include those who are appealing against being found fit for work.
+
+<img src="http://stats.learningandwork.org.uk/lms_images/chart17_mar2016.png" width="580" alt="chart 17"></span></td>
+  </tr>
+  <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 18: Claimants for inactive benefits and the economically inactive &#150; lone parents</strong></span>
+      <br><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;">
+      <br>
+The survey figures (showing those looking after family) rose while benefit measures fell slowly.<br><br>
+Income Support estimates have decreased, and those for Jobseeker&#146;s Allowance are now falling. Lone parents with a youngest child aged five or six have moved on to Jobseeker&#146;s Allowance as part of welfare reform.<br><br>
+This chart shows claimants of Income Support as lone parents, plus lone parents claiming Jobseeker&#146;s Allowance (the blue dots) and survey figures for all those who are economically inactive looking after family (including couple families).
+
+<img src="http://stats.learningandwork.org.uk/lms_images/chart18_mar2016.png" width="580" alt="chart 18">
+
+</span> </tr>
+    <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 19: Employment rate quarterly change in regions &#150; 
+    <!--rinline I(lfs_expanded) --></strong></span>
+    
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;"><br><br>
+    
+   This quarter, 
+   <!--rinline I(sum(regionquarter[1:12,5] > 0)) -->
+   regions showed a rise in the employment rate, led by 
+   the <!--rinline I(regionquarter[1:12,1][which.max(regionquarter[1:12,5])]) --> and Northern Ireland. 
+   The employment rate fell in 
+   <!--rinline I(sum(regionquarter[1:12,5] < 0)) -->
+   regions, 
+   the North West and <!--rinline I(regionquarter[1:12,1][which.min(regionquarter[1:12,5])]) -->.
+
+<img src="http://stats.learningandwork.org.uk/lms_images/chart19_mar2016.png"  width="580" alt="chart 19"></span></td>
+  </tr>
+<tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 20: Unemployment rate quarterly change in regions &#150; 
+    <!--rinline I(lfs_expanded) --></strong></span>
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;"><br>
+      <br>
+     
+      
+     <!--rinline I(sum(regionquarter[1:12,7] < 0)) -->
+     regions showed an improvement in the unemployment rate this quarter. 
+     <!--rinline I(sum(regionquarter[1:12,7] > 0)) --> 
+     showed a worsening. The rises were led by 
+     the <!--rinline I(regionquarter[1:12,1][which.max(regionquarter[1:12,7])]) --> 
+     and the <!--rinline I(regionquarter[1:12,1][which.max(regionquarter[1:12,7])]) -->.
+    
+ <img src="http://stats.learningandwork.org.uk/lms_images/chart20_mar2016.png"  width="580" alt="chart 20"></span></td>
+  </tr>
+  
+  <tr>
+    <td valign="top"><img src="http://stats.learningandwork.org.uk/ebriefing/arrow.gif" width="8" height="16"></td>
+    <td><span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif;  font-size:14px; color:#ee7e3b;"><strong>Chart 21: Inactivity rate quarterly change in regions &#150; 
+    <!--rinline I(lfs_expanded) --></strong></span>
+      <span style="font-family:Raleway, Arial, helvetica, Geneva, sans-serif; font-size:16px; color:#000000 line-height: 150%;"><br><br>
+Overall, there was a 
+<!--rinline I(round(diff(tail(workage,4)[,18],lag=3),1)) -->
+percentage point fall in the inactivity rate. 
+<!--rinline I(sum(regionquarter[1:12,9] > 0)) -->
+regions showed rises in inactivity, led by 
+the <!--rinline I(regionquarter[1:12,1][which.max(regionquarter[1:12,9])]) --> and the North West.
+
+<img src="http://stats.learningandwork.org.uk/lms_images/chart21_mar2016.png"  width="580" alt="chart 21">  </span></td>
+  </tr>
+
+
+
+<tr>
+    <td colspan="2" valign="top"><p style="font-family:helvetica, Arial, Helvetica, sans-serif; font-size:9px; color:#000000 ">This newsletter is produced by <a style="text-decoration: none; color:#ee7e3b;" href="http://www.learningandwork.org.uk">Learning and Work Institute</a>  and keeps readers up to date on a wide range of learning and work issues.<br> 
+        <br>
+      If you have any questions, contact <a style="text-decoration: none; color:#ee7e3b;" href="mailto:paul.bivand@learningandwork.org.uk">Paul Bivand</a><br>
+      <a style="text-decoration: none; color:#ee7e3b;" href="http://www.learningandwork.org.uk/">&#169; 2016 Learning and Work Institute</a>. All rights reserved. 
+      
+To unsubscribe, click here.
+
+To view this email in your browser click here.
+  </td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="http://stats.learningandwork.org.uk/lms_images/e-brief_footer.png" width="646" height="139"></td>
+  </tr>
+  
+                                                
+</table>
+
+</body>
+</html>
