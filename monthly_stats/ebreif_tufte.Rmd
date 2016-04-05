@@ -6,13 +6,10 @@ date: "`r Sys.Date()`"
 output:
   tufte::tufte_html: default
   tufte::tufte_handout:
-    citation_package: natbib
     latex_engine: xelatex
   tufte::tufte_book:
-    citation_package: natbib
     latex_engine: xelatex
-bibliography: skeleton.bib
-link-citations: yes
+
 ---
 
 ```{r setup, include=FALSE}
@@ -223,3 +220,14 @@ The *employment rate* is `r I(tail(lf24,1))`%, (*up* `r I(diff(tail(lf24,2), lag
 The female employment rate is `r I(tail(lf25,1))`%, *up* `r I(diff(tail(lf25,2), lag=1))` from last month's published figure (quarterly headline *up* `r I(diff(tail(lf25,4), lag=3))`). 
 
 Male employment is `r I(tail(mgsv,1))`, *up* `r I(diff(tail(mgsv,2), lag=1))` from last month's published figure (quarterly headline *up* `r I(diff(tail(mgsv,4), lag=3))`). 
+
+```{r emprates_dygraph, echo=FALSE, fig.cap="Employment rate", fig.width=7, fig.height=3}
+FUNC_JSFormatNumber <- "function(x) {return x.toString().replace(/(\\d)(?=(\\d{3})+(?!\\d))/g, '$1,')}"
+emprates <- a02[,c("Employment.rate", "Male.employment.rate", "Female.employment.rate")]
+emprates.dygraph <- dygraph(as.xts(emprates, 
+                        as.yearmon(index(emprates)))) %>% 
+  dyRangeSelector(dateWindow = c("2013-12-01", "2015-12-01")) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(emprates.dygraph, "Employment_rate_dygraph.html", selfcontained = TRUE)
+emprates.dygraph
+```
