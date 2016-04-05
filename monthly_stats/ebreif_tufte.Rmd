@@ -72,11 +72,11 @@ names(a02) <- c("Employment", "Employment.rate", "Male.employment", "Male.employ
 
 ```
 
-That downloaded all the data with a 1971 base year. The first data is for January to March 1971, and is shown as February here. Data before March-May 1992 is modelled from annual Labour Force Surveys and prior datasets such as the Claimant Count and Employee Jobs estimates. The pre-1992 estimates are niticeably smoother than the post-1992 figures that are based on the continuously running Labour Force Survey.
+That downloaded all the data with a 1971 base year. The first data is for January to March 1971, and is shown as February here. Data before March-May 1992 is modelled from annual Labour Force Surveys and prior datasets such as the Claimant Count and Employee Jobs estimates. The pre-1992 estimates are noticeably smoother than the post-1992 figures that are based on the continuously running Labour Force Survey.
 
 For the sparklines in ggplot2 I need to select the relevant series and transform them into a data.frame.
 
-```{r unem_sparklines, echo=FALSE, message=FALSE, fig.margin = TRUE, fig.cap = "Unemployment (ILO definition) and the Unemployment rate", fig.width=4, fig.height=2}
+```{r unem_sparklines, echo=FALSE, message=FALSE, fig.cap = "Unemployment (ILO definition) and the Unemployment rate", fig.width=4, fig.height=2}
 unem2 <- merge.zoo(mgsc, mgsx)
 names(unem2) <- c("ILO.unemployment", "ILO unemployment rate")
 unem_df <- fortify(tail(unem2,25), melt=TRUE)
@@ -148,7 +148,7 @@ mgsx.dygraph
 
 ##Chart 15 Employment (number)
 
-```{r emp_sparklines, echo=FALSE, message=FALSE, fig.margin = TRUE, fig.cap = "Employment, Female employment and Male employment", fig.width=4, fig.height=2}
+```{r emp_sparklines, echo=FALSE, message=FALSE, fig.cap = "Employment, Female employment and Male employment", fig.width=4, fig.height=2}
 unem2 <- merge.zoo(mgrz, mgsb, mgsa)
 names(unem2) <- c("Employment", "Female", "Male")
 unem_df <- fortify(tail(unem2,25), melt=TRUE)
@@ -187,7 +187,7 @@ Male employment is `r I(format(tail(mgsa,1)*1000,big.mark=","))`, *up* `r I(form
 
 ##Chart 16 Employment rate
 
-```{r emprate_sparklines, echo=FALSE, message=FALSE, fig.margin = TRUE, fig.cap = "Employment rates, All, Female and Male", fig.width=4, fig.height=2}
+```{r emprate_sparklines, echo=FALSE, message=FALSE, fig.cap = "Employment rates, All, Female and Male", fig.width=4, fig.height=2}
 unem2 <- merge.zoo(lf24, lf25, mgsv)
 names(unem2) <- c("Employment rate", "Female", "Male")
 unem_df <- fortify(tail(unem2,25), melt=TRUE)
