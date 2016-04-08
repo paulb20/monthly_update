@@ -297,3 +297,21 @@ saveWidget(claimant.dygraph, "claimant_count_dygraph.html", selfcontained = TRUE
 claimant.dygraph
 ```
 
+##Vacancies
+
+```{r ons_vacancies_data, echo=FALSE}
+ap2y <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/ap2y/data")
+ap2y <- zooreg(as.numeric(ap2y$months$value), start=c(2001,5), frequency = 12)
+jpc5 <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/jpc5/data")
+jpc5 <- zooreg(as.numeric(jpc5$months$value), start=c(2001,5), frequency = 12)
+
+vacs2001 <- merge.zoo(ap2y, jpc5)
+
+```
+Vacancies (in the Office for National Statistics survey of the whole economy) rose slightly this month, to 
+            `r I(format(tail(ap2y,1)*1000,big.mark=",")) `. 
+            As the number of vacancies is quite volatile, and frequently revised, the Office for National Statistics uses a three-month average.
+
+There are 
+    `r I(tail(jpc5,2)[1]) ` 
+    unemployed people per vacancy. Learning and Work Institute estimates this figure may fall slightly next month.
