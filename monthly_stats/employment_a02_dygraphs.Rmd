@@ -1,0 +1,125 @@
+---
+title: "Employment numbers and rates"
+date: "`r Sys.Date()`"
+output: 
+  html_document: 
+    fig_caption: yes
+    fig_height: 2
+---
+
+
+```{r knitr_init, echo=FALSE, cache=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+library(jsonlite)
+library(dplyr)
+library(tidyr)
+library(xts)
+library(dygraphs)
+library(htmlwidgets)
+
+
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+FUNC_JSFormatNumber <- "function(x) {return x.toString().replace(/(\\d)(?=(\\d{3})+(?!\\d))/g, '$1,')}"
+reportdate <- "September_2017"
+```
+
+
+```{r download_data, echo=FALSE}
+# employment
+mgrz <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/mgrz/lms/data")
+mgrz <- zooreg(as.numeric(mgrz$months$value), start=c(1971,2), frequency = 12)
+mgsa <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/mgsa/lms/data")
+mgsa <- zooreg(as.numeric(mgsa$months$value), start=c(1971,2), frequency = 12)
+mgsb <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/mgsb/lms/data")
+mgsb <- zooreg(as.numeric(mgsb$months$value), start=c(1971,2), frequency = 12)
+lf24 <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/lf24/lms/data")
+lf24 <- zooreg(as.numeric(lf24$months$value), start=c(1971,2), frequency = 12)
+mgsv <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/mgsv/lms/data")
+mgsv <- zooreg(as.numeric(mgsv$months$value), start=c(1971,2), frequency = 12)
+lf25 <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/lf25/lms/data")
+lf25 <- zooreg(as.numeric(lf25$months$value), start=c(1971,2), frequency = 12)
+
+
+
+empnos <- merge.zoo(mgrz, mgsa, mgsb)
+names(empnos) <- c("All", "Male", "Female")
+empnos <- empnos*1000
+empnos <- as.xts(empnos, as.yearmon(index(empnos)))
+dateWindow <- c(as.POSIXct(tail(index(empnos),25)[1]), as.POSIXct(tail(index(empnos),25)[25]))
+
+emprates <- merge.zoo(lf24, mgsv, lf25)
+names(emprates) <- c("All", "Male", "Female")
+emprates <- as.xts(emprates, as.yearmon(index(emprates)))
+
+
+```
+## Employment (includes self-employed, numbers)
+
+```{r emp.All, echo=FALSE, fig.cap="UK employment", fig.width=7, fig.height=2}
+emp.all.dygraph <- dygraph(empnos$All, group="empnos") %>% 
+  dySeries("All", label="UK employment", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(emp.all.dygraph, paste0("emp_UK",reportdate,".html"), selfcontained = TRUE)
+emp.all.dygraph
+```
+
+
+
+```{r emp.men, echo=FALSE, fig.cap="Male employment, numbers", fig.width=7, fig.height=1.7}
+male.emp.dygraph <- dygraph(empnos$Male, group="empnos") %>% 
+  dySeries("Male", label="Male employment", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(male.emp.dygraph, paste0("emp_male_",reportdate,".html"), selfcontained = TRUE)
+male.emp.dygraph
+```
+
+
+
+```{r emp.female, echo=FALSE, fig.cap="Female employment, numbers", fig.width=7, fig.height=1.7}
+female.emp.dygraph <- dygraph(empnos$Female, group="empnos") %>% 
+  dySeries("Female", label="Female employment", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(female.emp.dygraph, paste0("emp_female",reportdate,".html"), selfcontained = TRUE)
+female.emp.dygraph
+```
+
+## Employment rates (% of employed plus unemployed)
+
+```{r emprate.All, echo=FALSE, fig.cap="UK employment rate", fig.width=7, fig.height=2}
+emprate.all.dygraph <- dygraph(emprates$All, group="emprates") %>% 
+  dySeries("All", label="UK employment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(emprate.all.dygraph, paste0("emprate_UK",reportdate,".html"), selfcontained = TRUE)
+emprate.all.dygraph
+```
+
+```{r emprate.men, echo=FALSE, fig.cap="Male employment rate", fig.width=7, fig.height=1.7}
+male.emprate.dygraph <- dygraph(emprates$Male, group="emprates") %>% 
+  dySeries("Male", label="Male employment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(male.emprate.dygraph, paste0("emprate_male_",reportdate,".html"), selfcontained = TRUE)
+male.emprate.dygraph
+```
+
+```{r emprate.female, echo=FALSE, fig.cap="Female employment rate", fig.width=7, fig.height=1.7}
+female.emprate.dygraph <- dygraph(emprates$Female, group="emprates") %>% 
+  dySeries("Female", label="Female employment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(female.emprate.dygraph, paste0("emprate_female",reportdate,".html"), selfcontained = TRUE)
+female.emprate.dygraph
+```

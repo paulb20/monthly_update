@@ -1,0 +1,211 @@
+---
+title: "Monthly labour market stats update"
+subtitle: "Using styles derived from Edward Tufte"
+author: "Paul Bivand"
+date: "`r Sys.Date()`"
+output:
+  tufte::tufte_html: default
+  tufte::tufte_handout:
+    latex_engine: xelatex
+  tufte::tufte_book:
+    latex_engine: xelatex
+
+---
+
+```{r setup, include=FALSE}
+library(tufte)
+# invalidate cache when the tufte version changes
+knitr::opts_chunk$set(tidy = FALSE, cache.extra = packageVersion('tufte'))
+options(htmltools.dir.version = FALSE)
+library(jsonlite)
+library(dplyr)
+library(tidyr)
+library(xts)
+library(dygraphs)
+library(htmlwidgets)
+require(ggplot2)
+require(grid)
+require(zoo)
+require(ggthemes)
+require(scales)
+
+
+```
+
+# Introduction
+
+This is a bit of a test of using the JSON downloads from ONS as well as the Tufte styles.
+
+
+
+```{r download_a02, echo=FALSE}
+mgrz <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/mgrz/data")
+mgrz <- zooreg(as.numeric(mgrz$months$value), start=c(1971,2), frequency = 12)
+lf24 <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/lf24/data")
+lf24 <- zooreg(as.numeric(lf24$months$value), start=c(1971,2), frequency = 12)
+mgsa <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/mgsa/data")
+mgsa <- zooreg(as.numeric(mgsa$months$value), start=c(1971,2), frequency = 12)
+mgsb <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/mgsb/data")
+mgsb <- zooreg(as.numeric(mgsb$months$value), start=c(1971,2), frequency = 12)
+mgsv <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/mgsv/data")
+mgsv <- zooreg(as.numeric(mgsv$months$value), start=c(1971,2), frequency = 12)
+lf25 <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/lf25/data")
+lf25 <- zooreg(as.numeric(lf25$months$value), start=c(1971,2), frequency = 12)
+mgsc <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsc/data")
+mgsc <- zooreg(as.numeric(mgsc$months$value), start=c(1971,2), frequency = 12)
+mgsx <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsx/data")
+mgsx <- zooreg(as.numeric(mgsx$months$value), start=c(1971,2), frequency = 12)
+lf2m <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/economicinactivity/timeseries/lf2m/data")
+lf2m <- zooreg(as.numeric(lf2m$months$value), start=c(1971,2), frequency = 12)
+lf2s <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/economicinactivity/timeseries/lf2s/data")
+lf2s <- zooreg(as.numeric(lf2s$months$value), start=c(1971,2), frequency = 12)
+a02 <- merge.zoo(mgrz, lf24, mgsa, mgsv, mgsb, lf25, mgsc, mgsx, lf2m, lf2s)
+names(a02) <- c("Employment", "Employment.rate", "Male.employment", "Male.employment.rate", "Female.employment", "Female.employment.rate", "ILO.unemployment", "ILO.unemployment.rate", "Economic.inactivity", "Economic.inactivity.rate")
+
+```
+
+That downloaded all the data with a 1971 base year. The first data is for January to March 1971, and is shown as February here. Data before March-May 1992 is modelled from annual Labour Force Surveys and prior datasets such as the Claimant Count and Employee Jobs estimates. The pre-1992 estimates are noticeably smoother than the post-1992 figures that are based on the continuously running Labour Force Survey.
+
+
+
+##Chart 1: UK unemployment (ILO)
+
+Unemployment is `r I(format(tail(mgsc,1)*1000,big.mark=","))`, *down* `r I(format(diff(tail(mgsc,2), lag=1)*1000, big.mark=","))` from last month's published figure (quarterly headline *down* `r I(format(diff(tail(mgsc,4), lag=3)*1000, big.mark=","))`) and the *unemployment rate* is `r I(tail(mgsx,1))`%, *down* `r I(format(diff(tail(mgsx,2), lag=1)))` percentage points on last month and *down* `r I(format(diff(tail(mgsx,4), lag=3)))` percentage points on last quarter. 
+
+```{r unem_dygraph1, echo=FALSE, fig.cap="Unemployment (ILO definition)", fig.width=7, fig.height=2.5}
+FUNC_JSFormatNumber <- "function(x) {return x.toString().replace(/(\\d)(?=(\\d{3})+(?!\\d))/g, '$1,')}"
+names(mgsc) <- "ILO Unemployed"
+mgsc.dygraph <- dygraph(as.xts(mgsc*1000, 
+                        as.yearmon(index(mgsc)))) %>% 
+  dySeries("V1", label="ILO Unemployed", strokeWidth=3) %>%
+  dyRangeSelector(dateWindow = c("2015-06-01", "2017-06-01")) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(mgsc.dygraph, "Unemployment_dygraph.html", selfcontained = TRUE)
+mgsc.dygraph
+```
+
+
+The latest unemployment figure is `r I(format(tail(mgsc,1)*1000, big.mark=",")) `. It has fallen by `r I(format(diff(tail(mgsc,2), lag=1)*1000, big.mark=","))` from the figure published last month. The unemployment rate stayed at `r I(tail(mgsx,1))`%. 
+
+```{r unem_dygraph2, echo=FALSE, fig.cap="Unemployment rate", fig.width=7, fig.height=2.5}
+FUNC_JSFormatNumber <- "function(x) {return x.toString().replace(/(\\d)(?=(\\d{3})+(?!\\d))/g, '$1,')}"
+names(mgsx) <- "ILO Unemployment rate"
+mgsx.dygraph <- dygraph(as.xts(mgsx, 
+                        as.yearmon(index(mgsx)))) %>% 
+  dySeries("V1", label=names(mgsx), strokeWidth=3) %>%
+  dyRangeSelector(dateWindow = c("2015-06-01", "2017-06-01")) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(mgsx.dygraph, paste0("Unemployment_rate_dygraph",as.Date(index(tail(mgsx,25)[25])),".html"), selfcontained = TRUE)
+mgsx.dygraph
+```
+
+##Chart 15 Employment (number)
+
+Employment is `r I(format(tail(mgrz,1)*1000,big.mark=","))`, *up* `r I(format(diff(tail(mgrz,2), lag=1)*1000, big.mark=","))` from last month's published figure (quarterly headline *up* `r I(format(diff(tail(mgrz,4), lag=3)*1000, big.mark=","))`). 
+
+Female employment is `r I(format(tail(mgsb,1)*1000,big.mark=","))`, *up* `r I(format(diff(tail(mgsb,2), lag=1)*1000, big.mark=","))` from last month's published figure (quarterly headline *up* `r I(format(diff(tail(mgsb,4), lag=3)*1000, big.mark=","))`). 
+
+Male employment is `r I(format(tail(mgsa,1)*1000,big.mark=","))`, *up* `r I(format(diff(tail(mgsa,2), lag=1)*1000, big.mark=","))` from last month's published figure (quarterly headline *up* `r I(format(diff(tail(mgsa,4), lag=3)*1000, big.mark=","))`). 
+
+
+##Chart 16 Employment rate
+
+The *employment rate* is `r I(tail(lf24,1))`%, (*up* `r I(diff(tail(lf24,2), lag=1))` percentage points on last month's published figure and *up* `r I(diff(tail(lf24,4), lag=3))` percentage points in the preferred quarterly measure).
+
+The female employment rate is `r I(tail(lf25,1))`%, *up* `r I(diff(tail(lf25,2), lag=1))` from last month's published figure (quarterly headline *up* `r I(diff(tail(lf25,4), lag=3))`). 
+
+Male employment is `r I(tail(mgsv,1))`, *up* `r I(diff(tail(mgsv,2), lag=1))` from last month's published figure (quarterly headline *up* `r I(diff(tail(mgsv,4), lag=3))`). 
+
+```{r emprates_dygraph, echo=FALSE, fig.cap="Employment rate", fig.width=7, fig.height=3}
+FUNC_JSFormatNumber <- "function(x) {return x.toString().replace(/(\\d)(?=(\\d{3})+(?!\\d))/g, '$1,')}"
+emprates <- a02[,c("Employment.rate", "Male.employment.rate", "Female.employment.rate")]
+all.emprate.dygraph <- dygraph(as.xts(a02$Employment.rate, 
+                        as.yearmon(index(a02))), main="All", group="Employment.rates") %>% 
+  dyRangeSelector(dateWindow = c("2015-06-01", "2017-06-01")) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+male.emprate.dygraph <- dygraph(as.xts(a02$Male.employment.rate, 
+                        as.yearmon(index(a02))), main="Male", group="Employment.rates") %>% 
+  dyRangeSelector(dateWindow = c("2015-06-01", "2017-06-01")) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+female.emprate.dygraph <- dygraph(as.xts(a02$Female.employment.rate, 
+                        as.yearmon(index(a02))), main="Female", group="Employment.rates") %>% 
+  dyRangeSelector(dateWindow = c("2015-06-01", "2017-06-01")) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+#saveWidget(emprates.dygraph, "Employment_rate_dygraph.html", selfcontained = TRUE)
+all.emprate.dygraph
+```
+```{r male_emprate, echo=FALSE, fig.cap="Male Employment rate", fig.width=7, fig.height=3}
+male.emprate.dygraph
+```
+```{r female_emprate , echo=FALSE, fig.cap="Female Employment rate", fig.width=7, fig.height=3}
+female.emprate.dygraph
+```
+##Claimant Count
+
+The claimant count figures now include out of work Universal Credit bcjd. This is a temporary measure until the Universal Credit figures can distinguish between unemployed-like claims (full conditionality) and others (work preparation and no conditionality). 
+
+```{r download_cla01, echo=FALSE}
+bcjd <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/outofworkbenefits/timeseries/bcjd/data")
+bcjd <- zooreg(as.numeric(bcjd$months$value), start=c(1971,1), frequency = 12)
+bcje <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/outofworkbenefits/timeseries/bcje/data")
+bcje <- zooreg(as.numeric(bcje$months$value), start=c(1971,1), frequency = 12)
+cla01 <- merge.zoo(bcjd, bcje)
+names(cla01) <- c("Claimant.count", "Claimant.count.rate")
+```
+
+The number of *claimant unemployed* is 
+`r I(format(tail(bcjd,1)[,5]*1000,big.mark=",")) `, 
+*down* 
+`r I(format(round(diff(tail(bcjd,2)[,5]*1000, lag=1),1), big.mark=",")) `
+on last month, and the *claimant rate* is 
+`r I(round(tail(bcje,1)[,6],1)) `%. 
+
+ 
+
+
+The Jobseeker's Allowance and Universal Credit claimant acount fell by 
+`r I(format(round(diff(tail(bcjd,2)[,3]*1000, lag=1),1), big.mark=",")) `
+in October, 
+taking the total to 
+`r I(format(tail(bcjd,1)[,3]*1000,big.mark=","))`.
+
+```{r claimant_count_dygraph, echo=FALSE, fig.cap="Claimant count (JSA + UC)", fig.width=7, fig.height=3}
+FUNC_JSFormatNumber <- "function(x) {return x.toString().replace(/(\\d)(?=(\\d{3})+(?!\\d))/g, '$1,')}"
+
+claimant.dygraph <- dygraph(as.xts(cla01[,1]*1000, 
+                        as.yearmon(index(cla01)))) %>% 
+  dyRangeSelector(dateWindow = c("2015-08-01", "2017-08-01")) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(claimant.dygraph, "claimant_count_dygraph.html", selfcontained = TRUE)
+claimant.dygraph
+```
+
+##Vacancies
+
+```{r ons_vacancies_data, echo=FALSE}
+ap2y <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/ap2y/data")
+ap2y <- zooreg(as.numeric(ap2y$months$value), start=c(2001,5), frequency = 12)
+jpc5 <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/jpc5/data")
+jpc5 <- zooreg(as.numeric(jpc5$months$value), start=c(2001,5), frequency = 12)
+
+vacs2001 <- merge.zoo(ap2y, jpc5)
+
+```
+Vacancies (in the Office for National Statistics survey of the whole economy) rose slightly this month, to 
+            `r I(format(tail(ap2y,1)*1000,big.mark=",")) `. 
+            As the number of vacancies is quite volatile, and frequently revised, the Office for National Statistics uses a three-month average.
+            
+            
+```{r vacancies_dygraph, echo=FALSE, fig.cap="Vacancies (ONS survey)", fig.width=7, fig.height=3}
+FUNC_JSFormatNumber <- "function(x) {return x.toString().replace(/(\\d)(?=(\\d{3})+(?!\\d))/g, '$1,')}"
+
+vacs.dygraph <- dygraph(as.xts(vacs2001[,1]*1000, 
+                        as.yearmon(index(vacs2001)))) %>% 
+  dyRangeSelector(dateWindow = c("2015-07-01", "2017-07-01")) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(vacs.dygraph, "vacs_dygraph.html", selfcontained = TRUE)
+vacs.dygraph
+```
+There are 
+    `r I(tail(jpc5,2)[1]) ` 
+    unemployed people per vacancy. Learning and Work Institute estimates this figure may fall slightly next month.

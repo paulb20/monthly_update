@@ -1,0 +1,395 @@
+---
+title: "Learning and Work labour market analysis October 2017"
+author: Paul Bivand
+date: 2017 October 18
+output: 
+  html_document: 
+    fig_caption: yes
+    fig_height: 2
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(jsonlite)
+library(dplyr)
+library(tidyr)
+library(xts)
+library(dygraphs)
+library(htmlwidgets)
+library(readxl)
+library(readODS)
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+FUNC_JSFormatNumber <- "function(x) {return x.toString().replace(/(\\d)(?=(\\d{3})+(?!\\d))/g, '$1,')}"
+reportdate <- "October_2017"
+download_address <- "./lms_13-09-2017"
+excel_files <- list.files(download_address)
+needed_files <- c("a02sa", "a06sa", "a07", "ben02", "ben03", "cla02", "emp01sa", "hour01sa", "inac01sa", "unem01sa", "vacs01", "jsalp", "ben01", "cla01")
+stable <- c("was stable at", "showed no change at", "showed little change at")
+down <- c("has fallen by", "fell by", "is down by", "decreased by", "reduced by")
+up <- c("is up by", "rose by", "has risen by", "increased by")
+updown <- function(x) {ifelse(x < 0, sample(down,1), ifelse(x >0, sample(up,1), sample(stable,1)))}
+
+
+```
+```{r}
+a02 <- read_excel(paste0(download_address, "/",grep(paste0("^",needed_files[1]),excel_files, value=TRUE)), sheet=1, skip=7, col_types = c("skip", rep("numeric",18)))
+#ypjsalt %>% filter(is.na(People)) -> ypjsalt
+a02 <- na.trim(zooreg(a02, start=c(1971,1), frequency = 12))
+
+a06 <- read_excel(paste0(download_address, "/",grep(paste0("^",needed_files[2]),excel_files, value=TRUE)), sheet=1, skip=7, col_types = c("skip", rep("numeric",63)))
+#ypjsalt %>% filter(is.na(People)) -> ypjsalt
+a06 <- na.trim(zooreg(a06, start=c(1992,3), frequency = 12))
+
+emp01 <- read_excel(paste0(download_address, "/",grep(paste0("^",needed_files[7]),excel_files, value=TRUE)), sheet=1, skip=7, col_types = c("skip", rep("numeric",25)))
+#ypjsalt %>% filter(is.na(People)) -> ypjsalt
+emp01 <- na.trim(zooreg(emp01, start=c(1992,3), frequency = 12))
+
+hour01 <- read_excel(paste0(download_address, "/",grep(paste0("^",needed_files[8]),excel_files, value=TRUE)), sheet=1, skip=7, col_types = c("skip", rep("numeric",5)))
+#ypjsalt %>% filter(is.na(People)) -> ypjsalt
+hour01 <- na.trim(zooreg(hour01, start=c(1971,1), frequency = 12))
+
+inac01 <- read_excel(paste0(download_address, "/",grep(paste0("^",needed_files[9]),excel_files, value=TRUE)), na="..", sheet=1, skip=7, col_types = c("skip", rep("numeric",48)))
+#ypjsalt %>% filter(is.na(People)) -> ypjsalt
+inac01 <- na.trim(zooreg(inac01, start=c(1992,3), frequency = 12))
+
+unem01 <- read_excel(paste0(download_address, "/",grep(paste0("^",needed_files[10]),excel_files, value=TRUE)), na="*",sheet=1, skip=7, col_types = c("skip", rep("numeric",42)))
+#ypjsalt %>% filter(is.na(People)) -> ypjsalt
+unem01 <- na.trim(zooreg(unem01, start=c(1992,3), frequency = 12))
+
+ben02 <- read_excel(paste0(download_address, "/",grep(paste0("^",needed_files[4]),excel_files, value=TRUE)), sheet=1, skip=3)
+#ben02 %>% filter(!is.na("People")) -> ben02
+ben02 <- zooreg(ben02[4:9], start=c(1970,12), frequency = 12)
+
+ben03 <- read_excel(paste0(download_address, "/",grep(paste0("^",needed_files[5]),excel_files, value=TRUE)), sheet=1, skip=5)
+#ben03 %>% filter(is.na(People)) -> ben03
+ben03 <- ben03[-grep("^Change", ben03$People),]
+ben03 <- na.trim(zooreg(ben03[,4:40], start=c(1997,4), frequency = 12))
+
+
+cla01 <- read_excel(paste0(download_address, "/",grep(paste0("^",needed_files[14]),excel_files, value=TRUE)), sheet=1, skip=4, col_types = c("text", rep("numeric",12)))
+cla01 <- cla01[-grep("^Change", cla01$X__1),]
+cla01 <- cla01[!is.na(cla01$BCJD),-1]
+cla01 <- na.trim(zooreg(cla01, start=c(1971,1), frequency = 12))
+```
+
+# Headlines 
+
+* Unemployment is `r I(format(round(tail(overall,1)[,"MGSC"]/1000)*1000,big.mark=","))`, and `r I(paste(updown(round(diff(tail(overall,2)[,"MGSC"], lag=1))), format(abs(round(diff(tail(overall,2)[,"MGSC"], lag=1)/1000)*1000), big.mark=",")))` from last month's published figure (the quarterly headline `r I(paste(updown(round(diff(tail(overall,4)[,"MGSC"], lag=3)/1000)*1000),format(abs(round(diff(tail(overall,4)[,"MGSC"], lag=3)/1000)*1000), big.mark=",")))`) and the unemployment rate is `r I(round(tail(overall,1)[,"MGSX"],1))`%, `r I(paste(updown(round(diff(tail(overall,2)[,"MGSX"], lag=1),1)), format(abs(round(diff(tail(overall,2)[,"MGSX"], lag=1),1)))))` percentage points on last month and `r I(paste(updown(round(diff(tail(overall,4)[,"MGSX"], lag=3),1)), format(abs(round(diff(tail(overall,4)[,"MGSX"], lag=3),1)))))` percentage points on last quarter. 
+
+* The number of claimant unemployed is `r I(format(round(tail(claimants2,1)[,5],1)*1000, big.mark=","))`, and `r I(paste(updown(diff(tail(claimants2,2)[,5], lag=1)), format(abs(round(diff(tail(claimants2,2)[,5], lag=1),1)*1000), big.mark=",")))` on last month. The claimant rate is `r I(round(tail(claimants2,1)[,6],1))`%. 
+
+* The number of workless young people (not in employment, full-time education or training) is `r I(format(round(sum(tail(youth,1)[,c(54, 55)])/1000)*1000,big.mark=","))`, and `r I(paste(updown(diff(rowSums(tail(youth,4)[,c(54, 55)]),lag=3)), format(abs(round(diff(rowSums(tail(youth,4)[,c(54, 55)]),lag=3)/1000)*1000), big.mark=",")))` on the quarter, representing `r I(round(sum(tail(youth,1)[,c("AGOL", "AGPM")])/tail(youth,1)[,"JN5R"]*100,1))`% of the youth population (`r I(paste(updown(round(diff(rowSums(tail(youth,4)[,c(54, 55)])/tail(youth,4)[,44],lag=3)*100,1)),round(diff(rowSums(tail(youth,4)[,c(54, 55)])/tail(youth,4)[,44],lag=3)*100,1)))`percentage points). 
+
+* Youth unemployment (including students) is `r I(format(round(tail(youth,1)[,46]/1000)*1000,big.mark=","))`, and `r I(paste(updown(diff(tail(youth,4)[,46]/1000, lag=3)),format(abs(round(diff(tail(youth,4)[,46]/1000, lag=3))*1000),big.mark=",")))`on the quarter.
+
+* There are `r I(tail(vacancies,2)[1,5])` unemployed people per vacancy. Learning and Work Institute estimates this figure may fall further next month. 
+
+* The employment rate is `r I(round(tail(overall,1)[,"LF24"],1))`% (and `r I(paste(updown(round(diff(tail(overall,2)[,"LF24"], lag=1),1)), abs(round(diff(tail(overall,2)[,"LF24"], lag=1),1))))`percentage points on last month's published figure and `r I(paste(updown(round(diff(tail(overall,4)[,"LF24"], lag=3),1)), abs(round(diff(tail(overall,4)[,"LF24"], lag=3),1))))` percentage points in the preferred quarterly measure). 
+
+
+## Comment
+
+ The labour market figures published on 
+ 15 February
+are at first sight a set of positive figures. 
+
+
+Duncan Melville, Chief Economist at Learning and Work Institute, commented: 
+
+
+"The picture that emerges from the statistics released today is of a modestly improving labour market. In the last quarter of 2016, employment grew but at a much slower rate that we saw in the first half of the year, unemployment fell very slightly and the numbers of economically inactive (outside the labour market) fell after increasing recently.   
+
+
+Standing in contrast with moderate positivity, was the large and unexpected fall in claimant unemployment in the month to January - down by over 40,000. This may be the product of Universal Credit having a different seasonal pattern over Christmas from Jobseekers' Allowance. So, the ONS seasonal adjustment of the 'raw' numbers might not be right. Alternatively, a number of commentators, including the Learning and Work Institute, have been drawing attention to some worrying signs that Jobcentre Plus might have been distracted from supporting individuals into work by the ongoing roll out of Universal Credit. Jobcentre Plus will have seen those signs themselves and may now be taking action
+."
+
+Employment rose by `r I(format(round(diff(tail(overall,4)[,"MGRZ"], lag=3)/1000)*1000, big.mark=","))` between `r I(last_quarter)` and `r I(lfs_expanded)`. In the last 12 months employment has grown by `r I(format(round(diff(tail(overall,13)[,"MGRZ"], lag=12)/1000)*1000, big.mark=","))`.   
+
+Unemployment fell by `r I(format(round(diff(tail(overall,4)[,"MGSC"], lag=3)/1000)*1000, big.mark=","))` between `r I(last_quarter)` and `r I(lfs_expanded)`. and the unemployment rate fell `r I(diff(round(tail(overall,4)[,"MGSX"],1), lag=3))` percentage points to `r I(round(tail(overall,1)[,"MGSX"],1))`% in the quarter the lowest level since 2005.     
+
+Economic inactivity fell by `r I(format(round(diff(tail(overall,4)[,"LF2M"], lag=3)/1000)*1000, big.mark=","))` between `r I(last_quarter)` and `r I(lfs_expanded)`. and the inactivity rate fell `r I(diff(round(tail(overall,4)[,"LF2S"],1), lag=3))` percentage points to `r I(round(tail(overall,1)[,"LF2S"],1))`% in the quarter, a new record low. 
+ 
+The small rise in the claimant count takes account of normal seasonal effects but adjusted figures are not published for local areas. The actual number of claimants, nationally, rose by `r I(format(round(diff(tail(claimants[,7],2) + tail(claimants2[,3],2),1),1)*1000, big.mark=","))` in the month to `r I(months(strptime(paste(claimantdate, "01"), format="%Y %b %d")))`, compared to the adjusted rise of `r I(format(round(diff(tail(claimants2[,5],2),1),1)*1000, big.mark=","))`. Therefore, it should not be surprising that figures for local areas will show falls compared to the national picture.  
+
+The proportion of people leaving the claimant count (or the 'leavers rate') has risen. At `r I(round(tail(leaver.rate,1)*100,1))`%, it is now well below the level in early 2015 of `r I(round(max(leaver.rate)*100,1))`%. The number of new claims has fallen. Jobseeker's Allowance off-flow rates for JSA claimants of short durations increased. Off-flow rates remain at historically high levels. 
+
+Youth unemployment is showing a quarterly fall. There are still `r I(format(round(tail(youth,1)[,46]/1000)*1000,big.mark=","))` unemployed young people, and `r I(format(round(tail(YUnemployed,1)[,1]/1000)*1000,big.mark=","))`(`r I(round(tail(youth,1)[,54]/tail(youth,1)[,44]*100,1))`% of the youth population) who are unemployed and not in full-time education.  
+
+The proportion of unemployed young people (not counting students) who are not claiming Jobseeker's Allowance and therefore are not receiving official help with job search is now `r I(round(tail(YUnemployed_claimant[,4],3)[1]*100,1))`% and has risen by more than 20 percentage points since October 2012. 
+ 
+A total of `r I(format(round(tail(involunt_emp[,6],1)/1000,0)*1000,big.mark=","))` were counted as in employment while on 'government employment and training programmes', where the Office for National Statistics continues to count Work Programme (etc.) participants as 'in employment' by default. This number fell `r I(format(round(diff(tail(involunt_emp,4)[,6]/1000, lag=3))*1000,big.mark=","))` this quarter. Self-employment rose `r I(format(round(diff(tail(involunt_emp,4)[,4]/1000, lag=3))*1000,big.mark=","))` this quarter and reached a new record proportion of employment. Employee numbers rose `r I(format(round(diff(tail(involunt_emp,4)[,3]/1000, lag=3))*1000,big.mark=","))` in the quarter. Involuntary part-time employment fell this quarter by `r I(format(round(diff(tail(involunt_emp,4)[,22]/1000, lag=3))*1000,big.mark=","))` to `r I(format(round(tail(involunt_emp,1)[,22]/1000000,1)))` million, `r I(format(round(tail(involunt_emp,1)[,23],1)))`% of all part-time workers.The proportion remains nearly double that in 2004.
+
+
+## Chart 1: Unemployment
+
+```{r}
+MGSC <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/MGSC/lms/data")
+MGSC <- zooreg(as.numeric(MGSC$months$value), start=c(1971,1), frequency = 12)
+```
+
+
+Unemployment is `r I(format(round(tail(MGSC,1))*1000,big.mark=","))`,  and `r I(paste(updown(round(diff(tail(MGSC,2), lag=1))), format(abs(round(diff(tail(MGSC,2), lag=1))*1000), big.mark=",")))` from last month's published figure. 
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart1_September2017.png)
+
+The latest unemployment figure is `r I(format(round(tail(MGSC,2)[1])*1000,big.mark=",")) `. 
+
+It `r I(paste(updown(round(diff(tail(overall,2)[,"MGSC"], lag=1))), format(abs(round(diff(tail(overall,2)[,"MGSC"], lag=1)/1000)*1000), big.mark=",")))` from the figure published last month. On the basis of later claimant count figures, Learning and Work Institute estimates that unemployment may continue to decrease, although this remains highly uncertain. The unemployment rate `r I(paste(updown(round(diff(tail(overall,2)[,"MGSX"], lag=1))),  round(tail(overall,1)[,"MGSX"],1))) `%.
+
+
+## Chart 2: Percentage unemployed not claiming Jobseeker's Allowance or Universal Credit
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart2_September2017.png)
+
+The proportion of unemployed people not claiming Jobseeker's Allowance or Universal Credit has risen to `r I(round(tail((Unemployed_claimant[,4]*100),3),1)[1])`%, (`r I(format(round((tail((Unemployed_claimant[,3]),3)/1000))[1]*1000, big.mark=",")) `).
+
+The number and proportion of unemployed people not claiming Jobseeker's Allowance have been rising since the new Jobseeker's Allowance sanctions regime started in October 2012.
+
+## Chart 3: Youth long-term unemployment (six months and over, 18-24)
+
+```{r download_yplt}
+# youth_lt_unemployed
+ybxv <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/ybxv/lms/data")
+ybxv <- zooreg(as.numeric(ybxv$months$value), start=c(1992,4), frequency = 12)
+ybxy <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/ybxy/lms/data")
+ybxy <- zooreg(as.numeric(ybxy$months$value), start=c(1992,4), frequency = 12)
+
+
+yplt <- merge.zoo(ybxv, ybxy)
+yplt$yp6plus <- ybxv + ybxy
+ypjsalt <- read_excel(paste0(download_address, "/",grep(paste0("^",needed_files[5]),excel_files, value=TRUE)), sheet=1, skip=5)
+ypjsalt %>% filter(is.na(People)) -> ypjsalt
+zypjsalt <- na.trim(zooreg(ypjsalt$X__16 + ypjsalt$X__19, start=c(1997,4), frequency = 12))
+ypltu <- merge(yplt$yp6plus, zypjsalt)
+ypltu <- ypltu * 1000
+
+names(ypltu) <- c("ILO LT unemployed", "JSA LT claimants")
+ypltu <- as.xts(ypltu, as.yearmon(index(ypltu)))
+dateWindow <- c(as.POSIXct(tail(index(ypltu),25)[1]), as.POSIXct(tail(index(ypltu),25)[25]))
+
+
+
+```
+
+
+```{r ytltu_ilo, echo=FALSE, fig.cap="Youth long-term unemployment, survey-based numbers ", fig.width=7, fig.height=1.7}
+ypltu.ilo.dygraph <- dygraph(ypltu$`ILO LT unemployed`, group="ypltu") %>% 
+  dySeries("ILO LT unemployed", label="Unemployed", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(ypltu.ilo.dygraph, paste0("ypltu_ilo",reportdate,".html"), selfcontained = TRUE)
+ypltu.ilo.dygraph
+```
+```{r ytltu_jsa, echo=FALSE, fig.cap="Youth long-term unemployment, JSA claimant numbers ", fig.width=7, fig.height=1.7}
+ypltu.jsa.dygraph <- dygraph(ypltu$`JSA LT claimants`, group="ypltu") %>% 
+  dySeries("JSA LT claimants", label="JSA claimants", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(ypltu.jsa.dygraph, paste0("ypltu_jsa",reportdate,".html"), selfcontained = TRUE)
+ypltu.jsa.dygraph
+```
+
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart3_September2017.png)
+
+Youth long-term unemployment (which can include students) has risen by `r I(format(round(tail(diff(unemall[,"YBXY"] + unemall[,"YBXV"],1),1)/1000)*1000, big.mark=",")) ` from last month's figure and is now `r I(format(round(sum(tail(unemall[,c("YBXY", "YBXV")],1))/1000)*1000, big.mark=",")) `. 
+
+The youth Jobseeker's Allowance count remains far behind, at `r I(format(sum(tail(duration_claimants[,c(16,19)],1))*1000, big.mark=",")) `. 
+
+The count fell by `r I(format(tail(diff(duration_claimants[,16] + duration_claimants[,19]),1)*1000, big.mark=",")) ` this month. Participants on DWP programmes are included in the count unless in paid work. 
+
+##     Chart 4: Adult long-term unemployment (12 months and over, 25+)
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart4_September2017.png)
+
+Adult long-term unemployment on the survey measure is now `r I(format(round(sum(tail(unemall[,c("YBYN", "YBZC")],1))/1000)*1000, big.mark=",")) `. 
+
+The Jobseeker's Allowance measure is `r I(format(sum(tail(duration_claimants[,c(28,37)],1))*1000, big.mark=",")) `.
+
+
+## Chart 5: Unemployment rates by age
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart5_September2017.png)
+
+The 18 to 24 year old unemployment rate (including students) is `r I(round(tail(unemall[,"YBVQ"],1),1)) `% of the economically active, excluding one million economically inactive students from the calculation. 
+
+The rate for those aged 25 to 49 is `r I(round(tail(unemall[,"MGXB"],1),1)) `%. 
+
+For those aged 50 and over it is `r I(round(tail(unemall[,"YBVW"],1),1)) `%. 
+
+The quarterly change is up `r I(format(tail(diff(round(unemall[,"YBVQ"],1),3),1))) ` for 18 to 24 year olds, down `r I(format(tail(diff(round(unemall[,"MGXB"],1),3),1))) ` for 25 to 49 year olds, and down `r I(format(tail(diff(round(unemall[,"YBVW"],1),3),1))) ` for the over-50s.
+
+
+    
+## Chart 6: Young people not in employment, full-time education or training
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart6_September2017.png)
+
+
+The number of out of work young people who are not in full-time education (`r I(format(round(sum(tail(youth,1)[,c(54, 55)])/1000)*1000,big.mark=",")) `) has fallen in the past quarter by `r I(format(round(tail(diff(rowSums(youth[,c(54, 55)]),lag=3),1)/1000)*1000, big.mark=",")) `, or `r I(round((tail(diff(rowSums(youth[,c(54,55)]),lag=3),1)/tail(rowSums(youth[,54:55]),4)[1])*100,1)) `%. 
+
+The fall was largely among the inactive, with the number of unemployed young people not in full-time education or training falling at a lower rate.
+
+## Chart 7 Youth unemployment
+
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart7_September2017.png)
+
+The number of unemployed young people has risen by `r  I(format(round(tail(diff(youth[,46],1)/1000,1))*1000,big.mark=","))`since last month's figures, to `r  I(format(round(tail(youth,1)[,46]/1000)*1000,big.mark=","))`. 
+    
+Meanwhile, the number of young Universal Credit or Jobseeker's Allowance claimants fell last month by `r  I(format(tail(diff(ageclaimants2_thousands[,9]),1), big.mark=","))`, to `r  I(format(round(tail(ageclaimants2_thousands[,9],1),1),big.mark=","))`. 
+
+There are `r  I(format(round(tail(YUnemployed_claimant[,3],3)[1]/1000)*1000,scientific=FALSE, big.mark=","))` unemployed young people who are not in education, and do not claim Jobseeker's Allowance, `r  I(round(tail(YUnemployed_claimant[,4],3)[1]*100,1))`% of all unemployed young people who are not students.
+
+Claimant count
+============================  
+
+## Chart 8: Claimant count stocks
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart8_September2017.png)
+
+The Jobseeker 's Allowance and Universal Credit claimant acount fell by `r I(format(round(diff(tail(claimants2,2)[,5], lag=1),1)*1000, big.mark=",")) ` in `r I(months(strptime(paste(claimantdate, "01"), format="%Y %b %d")))`, taking the total to `r I(format(round(tail(claimants2,1)[,5],1)*1000,big.mark=",")) `. 
+
+In `r I(months(tail(loneparent_claimants,1)[,1])) `, the number of lone parents claiming Jobseeker 's Allowance was `r I(format(tail(loneparent_claimants,1)[,3], big.mark=",")) `. 12.1% of JSA claimants and 8.9% of the JSA/UC claimant count. Lone parents with a youngest child aged five or over can only claim Jobseeker 's Allowance, unless they have other reasons for claiming benefit.
+
+
+## Chart 9: Jobseeker's Allowance new claims and leavers
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart9_September2017.png)
+
+The number of new Jobseeker 's Allowance claims fell by `r I(format(diff(tail(claimants,2)[,5]*1000, lag=1), big.mark=","))` this month, to `r I(format(tail(claimants,1)[,5]*1000, big.mark=",")) `.
+
+Meanwhile the number of leavers also fell, by `r I(format(diff(tail(claimants,2)[,6]*1000, lag=1), big.mark=",")) `, to `r I(format(tail(claimants,1)[,6]*1000, big.mark=",")) `.
+
+## Chart 10: Jobseeker’s Allowance – claimant count leavers rate – leavers as percentage of ‘could leave’
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart10_September2017.png)
+
+Learning and Work Institute estimates that the 'leavers rate', people who have left the claimant count as a proportion of those who could leave it, has risen to `r I(round((tail(claimants[,6],1) / (tail(claimants[,3],2)[1] + tail(claimants[,5],1)))*100,1)) `% after several months of falls.
+
+
+## Chart 11: Jobseeker’s Allowance – claimants staying through each three-month threshold (seasonally adjusted)
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart11_September2017.png)
+
+These measures show an improvement for claimants at all lengths of unemployment, except the shortest term.
+
+The proportion staying beyond three months has risen to `r I(round(tail(season_pars[,1],1)*100,1)) `%. 
+
+Short-term claimants are mainly supported by Jobcentre Plus, although some will be Work Programme participants who have not sustained jobs.
+
+
+## Chart 12: Jobseeker’s Allowance – proportion of starters in month becoming longer-term unemployed
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart12_September2017.png)
+
+The proportion of starters becoming 12-month claimants is now `r I(as.character(round(tail(lag(season_pars[,1], -9) * lag(season_pars[,2],-6) * lag(season_pars[,3], -3) * season_pars[,4],1)*100,1))) `%.
+
+This is likely to rise over the next few months as the proportion of starters becoming 9-month claimants has risen by `r I(as.character(round(tail(diff(lag(season_pars[,1], -6) * lag(season_pars[,2],-3) * season_pars[,3], 3),1)*100, 1))) ` percentage points over the last three months.  
+ 
+These figures are based on those in Chart 11, but show the patterns of the same people passing through successive quarterly thresholds.
+
+Employment
+============================  
+
+##Chart 13: Vacancies - whole economy survey
+ 
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart13_September2017.png)
+
+Vacancies (in the Office for National Statistics survey of the whole economy) rose slightly this month, to `r I(format(tail(vacancies,1)[,3]*1000,big.mark=",")) `. 
+
+As the number of vacancies is quite volatile, and frequently revised, the Office for National Statistics uses a three-month average.
+            
+
+
+## Chart 14: Unemployed people per vacancy
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart14_September2017.png)
+
+There are `r I(tail(vacancies,2)[1,5]) ` unemployed people per vacancy.
+
+Learning and Work Institute estimates this figure may fall slightly next month.
+
+## Chart 15: UK employment
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart15_September2017.png)
+
+Employment rose by `r I(format(round(diff(tail(overall,2)[,"MGRZ"], lag=1)/1000)*1000, big.mark=",")) ` on the figure published last month, to `r I(format(round(tail(overall,1)[,"MGRZ"]/1000)*1000,big.mark=",")) `. 
+
+Employment fell `r I(format(round(diff(tail(overall,4)[,"MGRZ"], lag=3)/1000)*1000, big.mark=","))` between `r I(last_quarter)` and `r I(lfs_expanded)`. 
+
+In the last 12 months employment has grown by `r I(format(round(diff(tail(overall,13)[,"MGRZ"], lag=12)/1000)*1000, big.mark=","))`.
+
+## Chart 16: Employment rate in the UK
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart16_September2017.png)
+
+The employment rate rose by `r I(round(diff(tail(overall,4)[,"LF24"], lag=3),1)) ` percentage points over the quarter, to `r I(round(tail(overall,1)[,"LF24"],1)) `%. 
+
+Inactivity
+============================  
+
+
+## Chart 17: Claimants for inactive benefits and the economically inactive - inactivity benefits
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart17_September2017.png)
+
+The number of people inactive owing to long-term sickness fell, as did the benefit figure. The benefit figures show 'early estimates' of benefit numbers.
+
+This chart shows claimants of Employment and Support Allowance, and Incapacity Benefit (the orange dots), compared with survey figures for the economically inactive owing to long-term sickness.
+
+
+## Chart 18: Claimants for inactive benefits and the economically inactive - lone parents
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart18_September2017.png)
+
+
+The survey figures (showing those looking after family) rose while benefit measures fell slowly.
+
+Income Support estimates have decreased, and those for Jobseeker's Allowance are now falling. Lone parents with a youngest child aged five or six have moved on to Jobseeker's Allowance as part of welfare reform.
+
+This chart shows claimants of Income Support as lone parents, plus lone parents claiming Jobseeker's Allowance (the orange dots) and survey figures for all those who are economically inactive looking after family (including couple families).
+
+Regions
+============================  
+
+## Chart 19: Employment rate quarterly change in regions - `r I(lfs_expanded) `
+    
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart19_September2017.png)
+
+This quarter, `r I(sum(regionemp[,2] > 0)) ` regions showed a rise in the employment rate, led by the `r I(as.character(regionemp[12,1])) ` and `r I(as.character(regionemp[11,1])) `. 
+
+The employment rate fell in `r I(sum(regionemp[,2] < 0)) ` regions, led by the `r I(as.character(regionemp[1,1])) ` and `r I(as.character(regionemp[2,1])) `.
+
+
+
+
+## Chart 20: Unemployment rate quarterly change in regions - `r I(lfs_expanded) `
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart20_September2017.png)
+
+`r I(sum(regionunemp[,2] < 0)) ` regions showed an improvement in the unemployment rate this quarter. 
+
+`r I(sum(regionunemp[,2] > 0)) ` showed a worsening. 
+
+The rises were led by the `r I(as.character(regionunemp[12,1])) ` and the `r I(as.character(regionunemp[11,1])) `.
+    
+
+## Chart 21: Inactivity rate quarterly change in regions - `r I(lfs_expanded) `
+
+![alt text](http://stats.learningandwork.org.uk/lms_images/chart21_September2017.png)
+
+Overall, there was a `r I(round(diff(tail(workage,4)[,18],lag=3),1)) ` percentage point fall in the inactivity rate. 
+
+`r I(sum(regioninact[,2] > 0)) ` regions showed rises in inactivity, led by the `r I(as.character(regioninact[12,1])) ` and the `r I(as.character(regioninact[11,1])) `.
+
+

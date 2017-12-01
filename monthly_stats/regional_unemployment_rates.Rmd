@@ -1,0 +1,166 @@
+---
+title: "Regional unemployment rates"
+date: "`r Sys.Date()`"
+output: 
+  html_document: 
+    fig_caption: yes
+    fig_height: 2
+---
+
+
+```{r knitr_init, echo=FALSE, cache=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+library(rmdformats)
+library(jsonlite)
+library(dplyr)
+library(tidyr)
+library(xts)
+library(dygraphs)
+library(htmlwidgets)
+
+
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+FUNC_JSFormatNumber <- "function(x) {return x.toString().replace(/(\\d)(?=(\\d{3})+(?!\\d))/g, '$1,')}"
+reportdate <- "September_2017"
+```
+
+
+```{r download_data, echo=FALSE}
+national <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsx/data")
+national <- zooreg(as.numeric(national$months$value), start=c(1971,2), frequency = 12)
+NE <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/ycnc/data")
+NE <- zooreg(as.numeric(NE$months$value), start=c(1992,4), frequency = 12)
+NW <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/ycnd/data")
+NW <- zooreg(as.numeric(NW$months$value), start=c(1992,4), frequency = 12)
+YH <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/ycne/data")
+YH <- zooreg(as.numeric(YH$months$value), start=c(1992,4), frequency = 12)
+EM <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/ycnf/data")
+EM <- zooreg(as.numeric(EM$months$value), start=c(1992,4), frequency = 12)
+WM <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/ycng/data")
+WM <- zooreg(as.numeric(WM$months$value), start=c(1992,4), frequency = 12)
+EE <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/ycnh/data")
+EE <- zooreg(as.numeric(EE$months$value), start=c(1992,4), frequency = 12)
+LN <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/ycni/data")
+LN <- zooreg(as.numeric(LN$months$value), start=c(1992,4), frequency = 12)
+SE <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/ycnj/data")
+SE <- zooreg(as.numeric(SE$months$value), start=c(1992,4), frequency = 12)
+SW <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/ycnk/data")
+SW <- zooreg(as.numeric(SW$months$value), start=c(1992,4), frequency = 12)
+WA <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/ycnm/data")
+WA <- zooreg(as.numeric(WA$months$value), start=c(1992,4), frequency = 12)
+SC <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/ycnn/data")
+SC <- zooreg(as.numeric(SC$months$value), start=c(1992,4), frequency = 12)
+
+
+reg_unemprates <- merge.zoo(national, NE, NW, YH, EM, WM, EE, LN, SE, SW, WA, SC)
+names(reg_unemprates) <- c("National", "North.East", "North.West", "Yorkshire.and.the.Humber", "East.Midlands", "West.Midlands", "East.of.England", "London", "South.East", "South.West", "Wales", "Scotland")
+reg_unemprates <- tail(reg_unemprates, -254)
+reg_unemprates <- as.xts(reg_unemprates, as.yearmon(index(reg_unemprates)))
+dateWindow <- c(as.POSIXct(tail(index(reg_unemprates),25)[1]), as.POSIXct(tail(index(reg_unemprates),25)[25]))
+```
+
+```{r national, echo=FALSE, fig.cap="UK unemployment rate", fig.width=7, fig.height=2}
+national.dygraph <- dygraph(reg_unemprates$National, group="reg.unemprates") %>% 
+  dySeries("National", label="UK unemployment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(national.dygraph, paste0("reg_unemp_rate_UK",reportdate,".html"), selfcontained = TRUE)
+national.dygraph
+```
+
+
+
+```{r NE, echo=FALSE, fig.cap="North East unemployment rate", fig.width=7, fig.height=1.7}
+NE.dygraph <- dygraph(reg_unemprates$North.East, group="reg.unemprates") %>% 
+  dySeries("North.East", label="North East unemployment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(NE.dygraph, paste0("reg_unemp_rate_NE",reportdate,".html"), selfcontained = TRUE)
+NE.dygraph
+```
+
+
+
+```{r NW, echo=FALSE, fig.cap="North West unemployment rate", fig.width=7, fig.height=1.7}
+NW.dygraph <- dygraph(reg_unemprates$North.West, group="reg.unemprates") %>% 
+  dySeries("North.West", label="North West unemployment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(NW.dygraph, paste0("reg_unemp_rate_NWE",reportdate,".html"), selfcontained = TRUE)
+NW.dygraph
+```
+
+
+
+```{r YH, echo=FALSE, fig.cap="Yorkshire unemployment rate", fig.width=7, fig.height=1.7}
+YH.dygraph <- dygraph(reg_unemprates$Yorkshire.and.the.Humber, group="reg.unemprates") %>%   dySeries("Yorkshire.and.the.Humber", label="Yorkshire and the Humber unemployment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(YH.dygraph, paste0("reg_unemp_rate_YH",reportdate,".html"), selfcontained = TRUE)
+YH.dygraph
+```
+```{r EM, echo=FALSE, fig.cap="East Midlands unemployment rate", fig.width=7, fig.height=1.7}
+EM.dygraph <- dygraph(reg_unemprates$East.Midlands, group="reg.unemprates") %>%   dySeries("East.Midlands", label="East Midlands unemployment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(EM.dygraph, paste0("reg_unemp_rate_EM",reportdate,".html"), selfcontained = TRUE)
+EM.dygraph
+```
+```{r WM, echo=FALSE, fig.cap="West Midlands unemployment rate", fig.width=7, fig.height=1.7}
+WM.dygraph <- dygraph(reg_unemprates$West.Midlands, group="reg.unemprates") %>%   dySeries("West.Midlands", label="West Midlands unemployment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(WM.dygraph, paste0("reg_unemp_rate_WM",reportdate,".html"), selfcontained = TRUE)
+WM.dygraph
+```
+```{r EE, echo=FALSE, fig.cap="Eastern unemployment rate", fig.width=7, fig.height=1.7}
+EE.dygraph <- dygraph(reg_unemprates$East.of.England, group="reg.unemprates") %>%   dySeries("East.of.England", label="East of England unemployment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(EE.dygraph, paste0("reg_unemp_rate_EE",reportdate,".html"), selfcontained = TRUE)
+EE.dygraph
+```
+```{r LN, echo=FALSE, fig.cap="London unemployment rate", fig.width=7, fig.height=1.7}
+LN.dygraph <- dygraph(reg_unemprates$London, group="reg.unemprates") %>%   dySeries("London", label="London unemployment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(LN.dygraph, paste0("reg_unemp_rate_LN",reportdate,".html"), selfcontained = TRUE)
+LN.dygraph
+```
+```{r SE, echo=FALSE, fig.cap="South East unemployment rate", fig.width=7, fig.height=1.7}
+SE.dygraph <- dygraph(reg_unemprates$South.East, group="reg.unemprates") %>%   dySeries("South.East", label="South East unemployment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(SE.dygraph, paste0("reg_unemp_rate_SE",reportdate,".html"), selfcontained = TRUE)
+SE.dygraph
+```
+```{r SW, echo=FALSE, fig.cap="South West unemployment rate", fig.width=7, fig.height=1.7}
+SW.dygraph <- dygraph(reg_unemprates$South.West, group="reg.unemprates") %>%   dySeries("South.West", label="South West unemployment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(SW.dygraph, paste0("reg_unemp_rate_SW",reportdate,".html"), selfcontained = TRUE)
+SW.dygraph
+```
+```{r WA, echo=FALSE, fig.cap="Wales unemployment rate", fig.width=7, fig.height=1.7}
+WA.dygraph <- dygraph(reg_unemprates$Wales, group="reg.unemprates") %>%   dySeries("Wales", label="Wales unemployment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(WA.dygraph, paste0("reg_unemp_rate_WA",reportdate,".html"), selfcontained = TRUE)
+WA.dygraph
+```
+```{r SC, echo=FALSE, fig.cap="Scotland unemployment rate", fig.width=7, fig.height=1.7}
+SC.dygraph <- dygraph(reg_unemprates$Scotland, group="reg.unemprates") %>%   dySeries("Scotland", label="Scotland unemployment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(SC.dygraph, paste0("reg_unemp_rate_SC",reportdate,".html"), selfcontained = TRUE)
+SC.dygraph
+```

@@ -1,0 +1,218 @@
+---
+title: "Labour Market Analysis July 2017"
+output: 
+  flexdashboard::flex_dashboard:
+    self_contained: false
+    orientation: rows
+    logo: logolw.png
+    css: styles.css
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+myimages<-list.files("output/img/", pattern = ".png", full.names = TRUE)
+```
+
+Row {data-height=29}
+-----------------------------------------------------
+
+### Headlines
+
+The labour market figures published on 12 July are encouraging for individuals' job prospects with a strong increase in employment, and unemployment and economic inactivity amongst people of working age falling. However, people in work are getting poorer with real wages continuing to fall.
+
+*    **Unemployment** is 1,495,000, has fallen by 36,000 from last month's published figure (quarterly headline down by 64,000) and the **unemployment rate** is 4.5%, **down** 0.1 percentage points on last month and **down** 0.2 percentage points on last quarter. 
+*    The number of **claimant unemployed** is 829,000, **up** 6,000 on last month, and the **claimant rate** is 2.3%. 
+*    The number of **workless young people (not in employment, full-time education or training)** is 965,000, **down** 14,000 on the quarter, representing 13.6% of the youth population (**down** 0.1 percentage points). 
+*    **Youth unemployment** (including students) is 562,000, **up** 4,000 on the quarter.
+*    There are 1.9 **unemployed people per vacancy**. L&W estimates this figure may rise next month.
+*    The **employment rate** is 74.9% (**up** 0.1 percentage points on last month’s published figure and **up** 0.3 percentage points in the preferred quarterly measure).
+
+The rise in the claimant count takes account of normal seasonal effects but adjusted figures are not published for local areas. The actual number of claimants, nationally, fell by 11,500 in the month to June, compared to the adjusted rise of 6,000. Figures for local areas will show falls like the unadjusted national picture.
+
+The proportion of people leaving the claimant count (or the 'leavers rate') has fallen. At 16%, it is now well below the level in early 2015 of 19%. The number of new claims has fallen. JSA off-flow rates for JSA claimants of longer durations increased. Off-flow rates remain at historically high levels. 
+
+A total of 72,000 were counted as in employment while on 'government employment & training programmes', where the ONS continues to count Work Programme (etc.) participants as 'in employment' by default. This fell 21,000 this quarter. Self-employment rose 13,000 this quarter. Employee numbers rose 189,000 in the quarter. Involuntary part-time employment fell this quarter by 27,000 to 1 million, 12.1% of all part-time workers. The proportion remains nearly double that in 2004. 
+
+### Comment
+
+Duncan Melville, Chief Economist at L&W, commented: 
+
+"Employment growth in the three months from March to May 2017 strengthened further on previous months and reached 175,000. Unemployment and levels of inactivity amongst people of working age both fell. The working age employment and inactivity rates reached a record high and low respectively, and the unemployment rate fell to 4.5%, the lowest level since 1975. Despite the current uncertain economic and political climate, the labour market is performing strongly.
+
+The ONS have this month revised its seasonal adjustment of the claimant count. In contrast, with the above survey based numbers these new numbers show a notable increase in claimant unemployment of just under 50,000 in the four months to June 2017, later than any month counted for the survey estimates. Although on a quick look we continue to have some concerns about the precise patterns shown by these seasonally adjusted numbers they do look far more plausible than the previous set of numbers. Hence, these claimant count numbers may either be a herald of worse numbers to come in future months or indicate a disconnect between the strong performance of the labour market and trends for claimant unemployment. We have suggested that DWP focus on their support for JSA and UC unemployed claimants may be being distracted by the roll out of Universal Credit.
+
+Annual wage growth has picked up slightly to reach 2.0% in the three months March to May 2017. However, this increase has not been sufficient to offset rising inflation and real wages fell for the third month running. The absence of pay pressures despite the tight labour market will add support to those on the Bank of England's Monetary Policy Committee arguing against raising interest rates.
+
+The combination of high employment but declining real pay points to the need to focus on the quality of work as well as the quantity. That is the focus of the Taylor Review published yesterday and L&W has published a number of responses to this which will be added to over the next few days." 
+
+Row 2  {data-height=71}
+-------------------------------------
+###Unemployment 
+
+#### 1: UK unemployment (ILO) 
+
+Unemployment is 1,495,000, down by 36,000 from last month. From later claimant count figures, L&W estimates unemployment to rise. The unemployment rate fell 0.1 percentage points since last month to 4.5%. 
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[1])
+```
+
+#### 2: Unemployed not claiming benefits
+
+The % of unemployed people not claiming JSA or UC is down, to 45.4% (679,000). 
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[12])
+```
+
+#### 5: Unemployment rates by age
+
+The 18 to 24 year old unemployment rate (inc students) is 11.0%. The rate for those aged 25 to 49 is 3.4%. For those aged 50 and over it is 2.8%.
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[17])
+```
+
+### Long-term unemployment 
+
+#### 3: Youth long-term unemployment
+
+Youth long-term unemployment (which can include students) has risen 11,000 from last month's figure to 161,000.
+
+The youth long-term JSA count (UC is not included as it does not measure time unemployed) is far behind at 20,500 and fell 300 this month.  
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[15])
+```
+
+####     4: Adult long-term unemployment
+
+Adult long-term unemployment on the survey measure is now 292,000. The JSA measure is 147,600.
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[16])
+```
+
+### Youth unemployment 
+
+#### 6: Young people not in employment, full-time education or training
+
+Out of work young people  are not in full-time education (965,000) fell 14,000 in the quarter, or 1.4%. Three out of every five out of work young people not in full-time education are economically inactive rather than unemployed.
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[18])
+```
+
+#### 7 Youth unemployment
+
+The number of unemployed young people has fallen 2,000 since last month's figures to 562,000.
+
+Young UC or JSA claimants rose 710 last month, to 163,930. 202,000 unemployed young people who are not in education do not claim UC or JSA, 55.3% of all unemployed young people who are not students. 
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[19])
+```
+
+### Claimant count - Jobseeker's Allowance & Universal Credit
+
+#### 8: Claimant count stocks
+The JSA & UC claimant count rose 6,000 in June to 829,000. 
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[20])
+```
+
+#### 9: JSA new claims & leavers
+
+New JSA claims fell 1,700 this month to 90,400. Leavers fell 1,000 to 94,300. UC roll-out affects these. 
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[21])
+```
+
+#### 10: JSA leavers rate
+
+L&W estimates the 'leavers rate', people who leave JSA as % of those who could, is down to 16.0%. 
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[2])
+```
+
+### JSA flows into long-term claims
+
+#### 11: JSA: 3-month threshold flows
+
+JSA off-flow fell at all lengths of claim, except shortest term. The % staying beyond three months is down to 48.0%. 
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[3])
+```
+
+#### 12: JSA: % of starters in month becoming long-term unemployed
+
+The % of starters becoming 12-month claimants is now 10.8%. This is likely to rise over the next few months as the proportion of starters becoming 9-month claimants has risen by 1.4 percentage points over the last three months. 
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[4])
+```
+
+### Vacancies 
+ 
+#### 13: Vacancies
+ 
+Vacancies (ONS survey) fell this month to 774,000. 
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[5])
+```
+
+#### 14: Unemployed per vacancy
+
+There are 1.9 unemployed people per vacancy. L&W estimates this may rise.
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[6])
+```
+
+### Employment 
+
+#### 15: UK employment
+
+Employment rose 56,000 on last month to 32,010,000.
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[7])
+```
+
+#### 16: Employment rate
+
+The employment rate is 74.9%, up 0.3 percentage points in the quarter.
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[8])
+```
+
+### Claimants for inactive benefits & the economically inactive
+
+#### 17: incapacity benefits
+
+The number of people inactive owing to long-term sickness rose. DWP has stopped updating their 'early estimates' of benefit numbers.
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[9])
+```
+
+#### 18: Lone parents
+
+The survey figures (showing those looking after family) fell. DWP has stopped updating their 'early estimates' of benefit numbers.
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[10])
+```
+
+###Regions - quarterly changes in rates
+
+#### 19: Employment rate
+
+This quarter, 8 regions showed a rise in the employment rate, led by the North East. The employment rate fell in 4 regions, led by the East Midlands.
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[11])
+```
+
+#### 20: Unemployment rate
+
+9 regions showed an improvement in the unemployment rate this quarter. 3 showed a worsening. The rises were led by the West Midlands.
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[13])
+```
+
+#### 21: Inactivity rate
+
+Overall, there was a 0.2 percentage point fall in the inactivity rate. 4 regions showed rises in inactivity, led by the East Midlands.  
+```{r, echo = FALSE, out.width="100%"}
+include_graphics(myimages[14])
+```

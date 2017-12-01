@@ -1,0 +1,121 @@
+---
+title: "Employment, hours and gender"
+author: "Paul Bivand"
+date: "19 October 2017"
+output: html_document
+---
+
+```{r knitr_init, echo=FALSE, cache=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+library(rmdformats)
+library(jsonlite)
+library(dplyr)
+library(tidyr)
+library(xts)
+library(dygraphs)
+library(htmlwidgets)
+
+
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+FUNC_JSFormatNumber <- "function(x) {return x.toString().replace(/(\\d)(?=(\\d{3})+(?!\\d))/g, '$1,')}"
+reportdate <- "October_2017"
+all_hours <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/ybus/data")
+all_hours <- zooreg(as.numeric(all_hours$months$value), start=c(1971,2), frequency = 12)
+male <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/ybut/data")
+male <- zooreg(as.numeric(male$months$value), start=c(1971,2), frequency = 12)
+female <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/ybuu/data")
+female <- zooreg(as.numeric(female$months$value), start=c(1971,2), frequency = 12)
+
+hours_gender <- merge.zoo(all_hours, male, female)
+names(hours_gender) <- c("All", "Men", "Women")
+hours_gender <- as.xts(hours_gender, as.yearmon(index(hours_gender)))
+dateWindow <- c(as.POSIXct(tail(index(hours_gender),25)[1]), as.POSIXct(tail(index(hours_gender),25)[25]))
+
+all_pop <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/lf2o/data")
+all_pop <- zooreg(as.numeric(all_pop$months$value), start=c(1971,2), frequency = 12)
+male_pop <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/ybtg/data")
+male_pop <- zooreg(as.numeric(male_pop$months$value), start=c(1971,2), frequency = 12)
+female_pop <- fromJSON("http://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/lf2p/data")
+female_pop <- zooreg(as.numeric(female_pop$months$value), start=c(1971,2), frequency = 12)
+
+all_ratio <- (all_hours*1000)/all_pop
+male_ratio <- (male*1000)/male_pop
+female_ratio <- (female*1000)/female_pop
+
+hours_ratio_gender <- merge.zoo(all_ratio, male_ratio, female_ratio)
+names(hours_ratio_gender) <- c("All", "Men", "Women")
+hours_ratio_gender <- as.xts(hours_ratio_gender, as.yearmon(index(hours_ratio_gender)))
+
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r all_hours, echo=FALSE, fig.cap="All paid hours worked", fig.width=7, fig.height=2}
+All.hours.dygraph <- dygraph(hours_gender$All, group="hours_gender") %>% 
+  dySeries("All", label="All hours worked", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(All.hours.dygraph, paste0("All_hours",reportdate,".html"), selfcontained = TRUE)
+All.hours.dygraph
+```
+```{r male_hours, echo=FALSE, fig.cap="Paid hours worked by men", fig.width=7, fig.height=2}
+Male.hours.dygraph <- dygraph(hours_gender$Men, group="hours_gender") %>% 
+  dySeries("Men", label="Paid hours worked by men", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(Male.hours.dygraph, paste0("Male_hours",reportdate,".html"), selfcontained = TRUE)
+Male.hours.dygraph
+```
+```{r female_hours, echo=FALSE, fig.cap="Paid hours worked by women", fig.width=7, fig.height=2}
+Female.hours.dygraph <- dygraph(hours_gender$Women, group="hours_gender") %>% 
+  dySeries("Women", label="Paid hours worked by women", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(Female.hours.dygraph, paste0("Female_hours",reportdate,".html"), selfcontained = TRUE)
+Female.hours.dygraph
+```
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+```{r all_ratio, echo=FALSE, fig.cap="Paid hours worked per person", fig.width=7, fig.height=2}
+All.hours.ratio.dygraph <- dygraph(hours_ratio_gender$All, group="hours_ratio_gender") %>% 
+  dySeries("All", label="All hours worked", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(All.hours.ratio.dygraph, paste0("All_hours_ratio",reportdate,".html"), selfcontained = TRUE)
+All.hours.ratio.dygraph
+```
+```{r male_hours_ratio, echo=FALSE, fig.cap="Paid hours worked by men", fig.width=7, fig.height=2}
+Male.hours.ratio.dygraph <- dygraph(hours_ratio_gender$Men, group="hours_ratio_gender") %>% 
+  dySeries("Men", label="Paid hours per person worked by men", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(Male.hours.ratio.dygraph, paste0("Male_hours_ratio",reportdate,".html"), selfcontained = TRUE)
+Male.hours.ratio.dygraph
+```
+```{r female_hours_ratio, echo=FALSE, fig.cap="Paid hours worked by women", fig.width=7, fig.height=2}
+Female.hours.ratio.dygraph <- dygraph(hours_ratio_gender$Women, group="hours_ratio_gender") %>% 
+  dySeries("Women", label="Paid hours per person worked by women", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, retainDateWindow=TRUE) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(Female.hours.ratio.dygraph, paste0("Female_hours_ratio",reportdate,".html"), selfcontained = TRUE)
+Female.hours.ratio.dygraph
+```

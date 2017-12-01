@@ -1,0 +1,78 @@
+---
+title: "R Notebook"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(seasonal)
+library(zoo)
+library(chron)
+library(scales)
+library(ggthemes)
+library(readxl)
+library(plotly)
+source("lwi_pal.R")
+library(extrafont)
+loadfonts(device="win")
+data_quarter <- "nov2017" # changes quarterly (last one nov2016)
+download_address <- "./lms_15-11-2017/"
+#download.file(paste0("https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/datasets/labourforcesurveyflowsestimatesx02/current/x02", data_quarter,".xls"), paste0(download_address, "X02",data_quarter,".xls"), mode="wb", method="libcurl")
+X02 <- read_excel(paste0(download_address, "X02",data_quarter,".xls"), sheet=2, skip=6)
+X02 %>% mutate(UE_HR = `Unemployment to Employment`/(`Still in unemployment` + `Unemployment to Employment` + `Unemployment to Inactivity`),
+               NE_HR = `Inactivity to Employment` / (`Still in Inactivity` + `Inactivity to Employment` + `Inactivity to Unemployment`),
+               J2J_HR = Levels / (`Still in employment` + `Employment to Unemployment` + `Employment to Inactivity`)) -> X02
+
+#names(X02) <- make.names(X02)
+#X02 <- X02 %>% mutate(UE_HR = rowSums(``,))
+#X02$UE_HR <- X02[,14]/rowSums(X02[,13:15])
+#X02$NE_HR <- X02[,22]/rowSums(X02[,21:24])
+#X02$J2J_HR <- X02[,10]/rowSums(X02[,2:4])
+
+zooX02 <- zooreg(X02[,28:30], frequency=4, start=c(2001,4))
+seaszooX02 <- merge.zoo(
+  zooreg(final(seas(as.ts(zooX02$J2J_HR))), frequency=4, start=c(2001,4)),
+  zooreg(final(seas(as.ts(zooX02$UE_HR))), frequency=4, start=c(2001,4)),
+  zooreg(final(seas(as.ts(zooX02$NE_HR))), frequency=4, start=c(2001,4))
+  )
+colnames(seaszooX02) <- c("J2J_HR", "UE_HR", "NE_HR")
+indexedX02 <- merge.zoo(
+  zooreg(coredata(seaszooX02[,1])/coredata(seaszooX02[26,1]), frequency=4, start=c(2001,4)), 
+  zooreg(coredata(seaszooX02[,2])/coredata(seaszooX02[26,2]), frequency=4, start=c(2001,4)),
+  zooreg(coredata(seaszooX02[,3])/coredata(seaszooX02[26,3]), frequency=4, start=c(2001,4))
+)
+colnames(indexedX02) <- c("J2J_HR", "UE_HR", "NE_HR")
+indexedX02 <- indexedX02*100
+indexedX02_rollmean <- rollmean(indexedX02,4)
+names(indexedX02_rollmean) <- c("Job to Job flow rate", "Unemployment to employment rate", "Inactivity to employment rate")
+
+```
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+ggplot(data=fortify(indexedX02_rollmean, melt=TRUE), aes(x = Index, y = Value, group=Series, colour=Series)) + 
+  geom_line(size=2) +
+  guides(colour= guide_legend(title=NULL, nrow=3, byrow=TRUE)) +
+  scale_x_yearmon(format = "%b %Y") + scale_y_continuous(labels=comma) + 
+  theme_economist_white(base_size=12, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab(NULL) + 
+  scale_colour_lwi() + theme(legend.title=element_blank())
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+```{r}
+ggplot(data=fortify(tail(indexedX02_rollmean,40), melt=TRUE), aes(x = Index, y = Value)) + 
+  geom_line(size=2, colour="#ee7e3b") + facet_wrap(~Series)+
+  scale_x_yearmon(format = "%b %Y") + scale_y_continuous(labels=comma) + 
+  theme_economist_white(base_size=12, base_family="Raleway", gray_bg = FALSE) + 
+  xlab(NULL) + ylab(NULL) + 
+  scale_colour_lwi() + theme(legend.title=element_blank())
+
+```
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).

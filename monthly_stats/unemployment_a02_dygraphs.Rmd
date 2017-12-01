@@ -1,0 +1,208 @@
+---
+title: "Unemployment and economic inactivity numbers and rates"
+date: "`r Sys.Date()`"
+output: 
+  html_document: 
+    fig_caption: yes
+    fig_height: 2
+---
+
+
+```{r knitr_init, echo=FALSE, cache=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+library(jsonlite)
+library(dplyr)
+library(tidyr)
+library(xts)
+library(dygraphs)
+library(htmlwidgets)
+
+
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+FUNC_JSFormatNumber <- "function(x) {return x.toString().replace(/(\\d)(?=(\\d{3})+(?!\\d))/g, '$1,')}"
+reportdate <- "September_2017"
+```
+
+
+```{r download_data, echo=FALSE}
+# Unemployment
+mgsc <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsc/data")
+mgsc <- zooreg(as.numeric(mgsc$months$value), start=c(1971,2), frequency = 12)
+mgsd <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsd/data")
+mgsd <- zooreg(as.numeric(mgsd$months$value), start=c(1971,2), frequency = 12)
+mgse <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgse/data")
+mgse <- zooreg(as.numeric(mgse$months$value), start=c(1971,2), frequency = 12)
+mgsx <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsx/data")
+mgsx <- zooreg(as.numeric(mgsx$months$value), start=c(1971,2), frequency = 12)
+mgsy <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsy/data")
+mgsy <- zooreg(as.numeric(mgsy$months$value), start=c(1971,2), frequency = 12)
+mgsz <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsz/data")
+mgsz <- zooreg(as.numeric(mgsz$months$value), start=c(1971,2), frequency = 12)
+
+# Inactivity
+
+lf2m <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/economicinactivity/timeseries/lf2m/lms/data")
+lf2m <- zooreg(as.numeric(lf2m$months$value), start=c(1971,2), frequency = 12)
+ybso <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/economicinactivity/timeseries/YBSO/lms/data")
+ybso <- zooreg(as.numeric(ybso$months$value), start=c(1971,2), frequency = 12)
+lf2n <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/economicinactivity/timeseries/lf2n/lms/data")
+lf2n <- zooreg(as.numeric(lf2n$months$value), start=c(1971,2), frequency = 12)
+lf2s <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/economicinactivity/timeseries/lf2s/lms/data")
+lf2s <- zooreg(as.numeric(lf2s$months$value), start=c(1971,2), frequency = 12)
+ybtm <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/economicinactivity/timeseries/ybtm/lms/data")
+ybtm <- zooreg(as.numeric(ybtm$months$value), start=c(1971,2), frequency = 12)
+lf2t <- fromJSON("https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/economicinactivity/timeseries/lf2t/lms/data")
+lf2t <- zooreg(as.numeric(lf2t$months$value), start=c(1971,2), frequency = 12)
+
+
+unemnos <- merge.zoo(mgsc, mgsd, mgse)
+names(unemnos) <- c("All", "Male", "Female")
+unemnos <- unemnos*1000
+unemnos <- as.xts(unemnos, as.yearmon(index(unemnos)))
+dateWindow <- c(as.POSIXct(tail(index(unemnos),25)[1]), as.POSIXct(tail(index(unemnos),25)[25]))
+
+unemrates <- merge.zoo(mgsx, mgsy, mgsz)
+names(unemrates) <- c("All", "Male", "Female")
+unemrates <- as.xts(unemrates, as.yearmon(index(unemrates)))
+
+inactnos <- merge.zoo(lf2m, ybso, lf2n)
+names(inactnos) <- c("All", "Male", "Female")
+inactnos <- inactnos * 1000
+inactnos <- as.xts(inactnos, as.yearmon(index(inactnos)))
+
+inactrates <- merge.zoo(lf2s, ybtm, lf2t)
+names(inactrates) <- c("All", "Male", "Female")
+inactrates <- as.xts(inactrates, as.yearmon(index(inactrates)))
+
+```
+## Unemployment (ILO definition, numbers)
+
+```{r Unemp.All, echo=FALSE, fig.cap="UK Unemployment", fig.width=7, fig.height=2}
+unemp.all.dygraph <- dygraph(unemnos$All, group="unemnos") %>% 
+  dySeries("All", label="UK Unemployment", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(unemp.all.dygraph, paste0("unemp_UK",reportdate,".html"), selfcontained = TRUE)
+unemp.all.dygraph
+```
+
+
+
+```{r unem.men, echo=FALSE, fig.cap="Male unemployment, numbers", fig.width=7, fig.height=1.7}
+male.unemp.dygraph <- dygraph(unemnos$Male, group="unemnos") %>% 
+  dySeries("Male", label="Male unemployment", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(male.unemp.dygraph, paste0("unemp_male_",reportdate,".html"), selfcontained = TRUE)
+male.unemp.dygraph
+```
+
+
+
+```{r unemp.female, echo=FALSE, fig.cap="Female unemployment, numbers", fig.width=7, fig.height=1.7}
+female.unemp.dygraph <- dygraph(unemnos$Female, group="unemnos") %>% 
+  dySeries("Female", label="Female unemployment", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(female.unemp.dygraph, paste0("unemp_female",reportdate,".html"), selfcontained = TRUE)
+female.unemp.dygraph
+```
+
+## Unemployment rates (% of employed plus unemployed)
+
+```{r unemprate.All, echo=FALSE, fig.cap="UK Unemployment rate", fig.width=7, fig.height=2}
+unemprate.all.dygraph <- dygraph(unemrates$All, group="unemrates") %>% 
+  dySeries("All", label="UK Unemployment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(unemprate.all.dygraph, paste0("unemprate_UK",reportdate,".html"), selfcontained = TRUE)
+unemprate.all.dygraph
+```
+
+```{r unemprate.men, echo=FALSE, fig.cap="Male unemployment rate", fig.width=7, fig.height=1.7}
+male.unemprate.dygraph <- dygraph(unemrates$Male, group="unemrates") %>% 
+  dySeries("Male", label="Male unemployment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(male.unemprate.dygraph, paste0("unemprate_male_",reportdate,".html"), selfcontained = TRUE)
+male.unemprate.dygraph
+```
+
+```{r unemprate.female, echo=FALSE, fig.cap="Female unemployment rate", fig.width=7, fig.height=1.7}
+female.unemprate.dygraph <- dygraph(unemrates$Female, group="unemrates") %>% 
+  dySeries("Female", label="Female unemployment rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(female.unemprate.dygraph, paste0("unemprate_female",reportdate,".html"), selfcontained = TRUE)
+female.unemprate.dygraph
+```
+##Economic inactivity (numbers)
+
+This is people aged 16-64 who are neither employed nor unemployed (for any reason).
+
+```{r Inact.All, echo=FALSE, fig.cap="Economic inactivity, numbers", fig.width=7, fig.height=2}
+inact.all.dygraph <- dygraph(inactnos$All, group="inactnos") %>% 
+  dySeries("All", label="UK economic inactivity", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(inact.all.dygraph, paste0("inact_UK",reportdate,".html"), selfcontained = TRUE)
+inact.all.dygraph
+```
+
+```{r Inact.men, echo=FALSE, fig.cap="Male inactivity, numbers", fig.width=7, fig.height=1.7}
+male.inact.dygraph <- dygraph(inactnos$Male, group="inactnos") %>% 
+  dySeries("Male", label="Male inactivity", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(male.inact.dygraph, paste0("inact_male_",reportdate,".html"), selfcontained = TRUE)
+male.inact.dygraph
+```
+
+
+```{r inact.female, echo=FALSE, fig.cap="Female inactivity, numbers", fig.width=7, fig.height=1.7}
+female.inact.dygraph <- dygraph(inactnos$Female, group="inactnos") %>% 
+  dySeries("Female", label="Female inactivity", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(female.inact.dygraph, paste0("inact_female",reportdate,".html"), selfcontained = TRUE)
+female.inact.dygraph
+```
+## Inactivity rates
+
+The economic inactivity rate is the proportion of the 16-64 population who are neither employed nor unemployed.
+
+```{r inactrate.All, echo=FALSE, fig.cap="UK inactivity rate", fig.width=7, fig.height=2}
+inactrate.all.dygraph <- dygraph(inactrates$All, group="inactrates") %>% 
+  dySeries("All", label="UK inactivity rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(inactrate.all.dygraph, paste0("inactrate_UK",reportdate,".html"), selfcontained = TRUE)
+inactrate.all.dygraph
+```
+
+```{r inactrate.men, echo=FALSE, fig.cap="Male inactivity rate", fig.width=7, fig.height=1.7}
+male.inactrate.dygraph <- dygraph(inactrates$Male, group="inactrates") %>% 
+  dySeries("Male", label="Male inactivity rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(male.inactrate.dygraph, paste0("inactrate_male_",reportdate,".html"), selfcontained = TRUE)
+male.inactrate.dygraph
+```
+
+```{r inactrate.female, echo=FALSE, fig.cap="Female inactivity rate", fig.width=7, fig.height=1.7}
+female.inactrate.dygraph <- dygraph(inactrates$Female, group="inactrates") %>% 
+  dySeries("Female", label="Female inactivity rate", strokeWidth=3, color="#ee7e3b") %>%
+  dyRangeSelector(dateWindow = dateWindow, height=20) %>% 
+  dyAxis("y", axisLabelFormatter=JS(FUNC_JSFormatNumber), valueFormatter=JS(FUNC_JSFormatNumber))
+saveWidget(female.inactrate.dygraph, paste0("inactrate_female",reportdate,".html"), selfcontained = TRUE)
+female.inactrate.dygraph
+```

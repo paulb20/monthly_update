@@ -1,0 +1,64 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r setup}
+data_month <- "nov2017" # as per ONS web addresses
+data_quarter <- "nov2017" # changes quarterly (last one nov2016)
+download_address <- "./lms_15-11-2017/"
+#Hours
+download.file(paste0("https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peopleinwork/earningsandworkinghours/datasets/actualweeklyhoursworkedseasonallyadjustedhour01sa/current/hour01sa", data_month,".xls"), paste0(download_address, "hour01sa",data_month,".xls"), mode="wb", method="libcurl")
+#Claimant count by age
+download.file(paste0("http://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peoplenotinwork/outofworkbenefits/datasets/cla02claimantcountbyagegroup/current/cla02", data_month,".xls"), paste0(download_address, "cla02",data_month,".xls"), mode="wb", method="libcurl")
+#a02sa
+download.file(paste0("http://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/datasets/employmentunemploymentandeconomicinactivityforpeopleaged16andoverandagedfrom16to64seasonallyadjusteda02sa/current/a02sa", data_month,".xls"), paste0(download_address, "a02sa",data_month,".xls"), mode="wb", method="libcurl")
+#a06sa
+download.file(paste0("http://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/datasets/educationalstatusandlabourmarketstatusforpeopleagedfrom16to24seasonallyadjusteda06sa/current/a06sa", data_month,".xls"), paste0(download_address, "a06sa",data_month,".xls"), mode="wb", method="libcurl")
+#cla01
+download.file(paste0("https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peoplenotinwork/outofworkbenefits/datasets/claimantcountcla01/current/cla01", data_month,".xls"), paste0(download_address, "cla01",data_month,".xls"), mode="wb", method="libcurl")
+
+#inac01
+download.file(paste0("https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peoplenotinwork/economicinactivity/datasets/economicinactivitybyreasonseasonallyadjustedinac01sa/current/inac01sa", data_month,".xls"), paste0(download_address, "inac01sa",data_month,".xls"), mode="wb", method="libcurl")
+
+#emp01
+download.file(paste0("https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/datasets/fulltimeparttimeandtemporaryworkersseasonallyadjustedemp01sa/current/emp01sa", data_month,".xls"), paste0(download_address, "emp01sa",data_month,".xls"), mode="wb", method="libcurl")
+
+#ben03
+download.file(paste0("https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peoplenotinwork/outofworkbenefits/datasets/jobseekersallowancebyageanddurationben03/current/ben03", data_month,".xls"), paste0(download_address, "ben03",data_month,".xls"), mode="wb", method="libcurl")
+
+#ben02
+download.file(paste0("https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peoplenotinwork/outofworkbenefits/datasets/jobseekersallowanceclaimantsben02/current/ben02", data_month,".xls"), paste0(download_address, "ben02",data_month,".xls"), mode="wb", method="libcurl")
+
+#X02
+download.file(paste0("https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/datasets/labourforcesurveyflowsestimatesx02/current/x02", data_quarter,".xls"), paste0(download_address, "X02",data_quarter,".xls"), mode="wb", method="libcurl")
+
+#ben01
+download.file(paste0("https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peoplenotinwork/outofworkbenefits/datasets/mainoutofworkbenefitsben01/current/ben01", data_quarter,".xls"), paste0(download_address, "ben01",data_quarter,".xls"), mode="wb", method="libcurl")
+
+#a07
+download.file(paste0("https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/datasets/regionallabourmarketsummarya07/current/a07", data_month,".xls"), paste0(download_address, "a07",data_month,".xls"), mode="wb", method="libcurl")
+
+#unem01
+download.file(paste0("https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peoplenotinwork/unemployment/datasets/unemploymentbyageanddurationseasonallyadjustedunem01sa/current/unem01sa", data_month,".xls"), paste0(download_address, "unem01sa",data_month,".xls"), mode="wb", method="libcurl")
+
+#vacs01
+download.file(paste0("https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peoplenotinwork/unemployment/datasets/vacanciesandunemploymentvacs01/current/vacs01", data_month,".xls"), paste0(download_address, "vacs01",data_month,".xls"), mode="wb", method="libcurl")
+
+#regional_nomis
+download.file("http://www.nomisweb.co.uk/articles/news/files/LFS%20headline%20indicators.xls", paste0(download_address, "lfs_headline_indicators",data_month,".xls"), mode="wb", method="libcurl")
+
+# A05 - Age
+
+download.file(paste0("https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/datasets/employmentunemploymentandeconomicinactivitybyagegroupseasonallyadjusteda05sa/current/a05sa", data_month,".xls"), paste0(download_address, "a08",data_month,".xls"), mode="wb", method="libcurl")
+
+#A08 - Disability
+
+download.file(paste0("https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/datasets/labourmarketstatusofdisabledpeoplea08/current/a08", data_quarter,".xls"), paste0(download_address, "a08",data_quarter,".xls"), mode="wb", method="libcurl")
+
+#A09 - Ethnicity
+
+download.file(paste0("https://www.ons.gov.uk/file?uri=/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/datasets/labourmarketstatusbyethnicgroupa09/current/a09", data_quarter,".xls"), paste0(download_address, "a09",data_quarter,".xls"), mode="wb", method="libcurl")
+
+```
+
