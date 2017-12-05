@@ -34,7 +34,6 @@ a:active {
 <body>
 <!--begin.rcode setup, echo=FALSE, message=FALSE, warning=FALSE
 options( java.parameters = "-Xmx2g" )
-load(".RData")
 library(XLConnect)
 library(zoo)
 library(chron)
@@ -374,7 +373,6 @@ ggplot(data=fortify(unemployed, melt=TRUE), aes(x = Index, y = Value, group=Seri
   scale_colour_lwi() + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 #windowsFonts(Raleway, Arial = windowsFont("TT Raleway, Arial"))
 ggsave(paste0("chart1_",dateforpngs,".png"), width=100, height=60, units="mm")
-ftpUpload(paste0("chart1_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk/files/lms_images/chart1_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 #chart 2 Percentage unemployed not claiming JSA
 non_claimant_percent <- tail(Unemployed_claimant[,4],25)
@@ -385,7 +383,6 @@ ggplot(data=fortify(non_claimant_percent, melt=TRUE), aes(x = Index, y = Value, 
   xlab(NULL) + ylab(NULL) + scale_colour_lwi()  + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 #windowsFonts(Raleway, Arial = windowsFont("TT Raleway, Arial"))
 ggsave(paste0("chart2_",dateforpngs,".png"), width=100, height=60, unit="mm")
-ftpUpload(paste0("chart2_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart2_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 
 #chart 3 Long term unemployed youth
@@ -406,7 +403,6 @@ ggplot(data=fortify(youth_lt, melt=TRUE), aes(x = Index, y = Value, colour=Serie
   theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
   xlab(NULL) + ylab(NULL) + scale_colour_lwi()  + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart3_",dateforpngs,".png"), width=100, height=60, unit="mm")
-ftpUpload(paste0("chart3_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart3_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 
 #chart 4 Long term unemployed adults
@@ -426,7 +422,6 @@ ggplot(data=fortify(old_lt, melt=TRUE), aes(x = Index, y = Value, colour=Series)
   theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
   xlab(NULL) + ylab(NULL) + scale_colour_lwi() + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart4_",dateforpngs,".png"), width=100, height=60, unit="mm")
-ftpUpload(paste0("chart4_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart4_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 #chart 5 Unemployment rates by age
 unemployedyr.zoo <-zooreg(unemall[,"YBVQ"], start=c(1992,4), frequency=12)
@@ -440,7 +435,6 @@ ggplot(data=fortify(unemployed_age_rates, melt=TRUE), aes(x = Index, y = Value, 
   theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
   xlab(NULL) + ylab(NULL) + scale_colour_lwi() + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart5_",dateforpngs,".png"), width=100, height=60, unit="mm")
-ftpUpload(paste0("chart5_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart5_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 
 #chart 6 Youth not in employment or full-time ed
@@ -454,7 +448,6 @@ ggplot(data=fortify(ypnfte, melt=TRUE), aes(x = Index, y = Value)) +
   theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
   xlab(NULL) + ylab(NULL) + scale_colour_lwi() + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart6_",dateforpngs,".png"), width=100, height=60, unit="mm")
-ftpUpload(paste0("chart6_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart6_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 # chart 7 Youth unemployment
 
@@ -469,7 +462,6 @@ ggplot(data=fortify(yunem, melt=TRUE), aes(x = Index, y = Value, colour=Series))
   theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
   xlab(NULL) + ylab(NULL) + scale_colour_lwi() + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart7_",dateforpngs,".png"), width=100, height=60, unit="mm")
-ftpUpload(paste0("chart7_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart7_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 
 # chart 8 JSA claimant count
@@ -482,7 +474,6 @@ ggplot(data=fortify(jsa.cc, melt=TRUE), aes(x = Index, y = Value)) +
   theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
   xlab(NULL) + ylab(NULL) + scale_colour_lwi() + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart8_",dateforpngs,".png"), width=100, height=60, unit="mm")
-ftpUpload(paste0("chart8_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart8_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 
 #chart 9 JSA new claims and leavers
@@ -496,7 +487,6 @@ ggplot(data=fortify(jsa.flow, melt=TRUE), aes(x = Index, y = Value, colour=Serie
   theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
   xlab(NULL) + ylab(NULL) + scale_colour_lwi() + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart9_",dateforpngs,".png"), width=100, height=60, unit="mm")
-ftpUpload(paste0("chart9_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart9_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 
 #chart 10 JSA leavers rate
@@ -509,7 +499,6 @@ ggplot(data=fortify(leaver.rate, melt=TRUE), aes(x = Index, y = Value)) +
   theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
   xlab(NULL) + ylab(NULL) + scale_colour_lwi() + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart10_",dateforpngs,".png"), width=100, height=60, unit="mm")
-ftpUpload(paste0("chart10_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart10_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 
 #chart 11 Threshold flows
@@ -529,7 +518,6 @@ p <- ggplot(data=fortify(thresholds, melt=TRUE), aes(x = Index, y = Value, colou
   xlab(NULL) + ylab(NULL) + scale_colour_lwi() + 
   theme(legend.margin=unit(-0.1,"cm"), legend.background = element_rect(fill=NA),legend.text = element_text(size = rel(1.0), lineheight = 1))+ theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart11_",dateforpngs,".png"), p, width=100, height=60, unit="mm")
-ftpUpload(paste0("chart11_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart11_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 
 #chart 12 Threshold flows (2)
@@ -566,7 +554,6 @@ p <- ggplot(data=cumthresholds2, aes(x = group, y = value, group=variable, colou
   xlab(NULL) + ylab(NULL) + 
   theme(legend.margin=unit(-0.1,"cm"), legend.text = element_text(size = rel(1.0), lineheight = 0.4))+ theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart12_",dateforpngs,".png"), p, width=100, height=60, unit="mm")
-ftpUpload(paste0("chart12_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart12_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 
 #chart 13 Vacancies
@@ -579,7 +566,6 @@ ggplot(data=fortify(vacs, melt=TRUE), aes(x = Index, y = Value)) +
   theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
   xlab(NULL) + ylab(NULL) + scale_colour_lwi() + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart13_",dateforpngs,".png"), width=100, height=60, unit="mm")
-ftpUpload(paste0("chart13_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart13_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 
 
@@ -597,7 +583,6 @@ ggplot(data=fortify(upv, melt=TRUE), aes(x = Index, y = Value, colour=Series)) +
   theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
   xlab(NULL) + ylab(NULL) + scale_colour_lwi() + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart14_",dateforpngs,".png"), width=100, height=60, unit="mm")
-ftpUpload(paste0("chart14_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart14_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 
 #chart 15 Employment number
@@ -610,7 +595,6 @@ ggplot(data=fortify(empno, melt=TRUE), aes(x = Index, y = Value)) +
   theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
   xlab(NULL) + ylab(NULL) + scale_colour_lwi() + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart15_",dateforpngs,".png"), width=100, height=60, unit="mm")
-ftpUpload(paste0("chart15_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart15_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 
 
@@ -624,7 +608,6 @@ ggplot(data=fortify(emprate, melt=TRUE), aes(x = Index, y = Value)) +
   theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE) + 
   xlab(NULL) + ylab(NULL) + scale_colour_lwi() + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart16_",dateforpngs,".png"), width=100, height=60, unit="mm")
-ftpUpload(paste0("chart16_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart16_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 
 #chart 17 Econ inactive/ESA/IB
@@ -657,7 +640,6 @@ c17 <- ggplot(data=fortify(inact_dis_bens_tail[,4:5], melt=TRUE), aes(x = Index,
   xlab(NULL) + ylab("Index: Oct-Dec 2011 = 100") + 
   scale_colour_lwi() + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart17_",dateforpngs,".png"), c17, width=100, height=60, unit="mm")
-ftpUpload(paste0("chart17_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart17_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 
 #chart 18 Econ inactive/lone parent benefits
@@ -694,7 +676,6 @@ c18 <- ggplot(data=fortify(inact_parent_tail[,6:7], melt=TRUE), aes(x = Index, y
   xlab(NULL) + ylab("Index: Oct-Dec 2011 = 100") + 
   scale_colour_lwi() + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart18_",dateforpngs,".png"), c18, width=100, height=60, unit="mm")
-ftpUpload(paste0("chart18_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart18_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 #chart 19 Regional employment rate change
 
@@ -711,7 +692,6 @@ ggplot(regionemp, aes(x=Region, y=`Employment rate change`)) +
   xlab(NULL) + ylab(NULL) + scale_fill_lwi() + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart19_",dateforpngs,".png"), width=100, height=60, unit="mm")
 
-ftpUpload(paste0("chart19_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart19_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 #chart 20 Regional unemployment rate change
 
@@ -727,7 +707,6 @@ ggplot(regionunemp, aes(x=Region, y=`Unemployment rate change`)) +
   theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE,horizontal=FALSE) + 
   xlab(NULL) + ylab(NULL) + scale_fill_lwi() + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart20_",dateforpngs,".png"), width=100, height=60, unit="mm")
-ftpUpload(paste0("chart20_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart20_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 #chart 21 Regional inactivity rate change
 
@@ -743,130 +722,12 @@ ggplot(regioninact, aes(x=Region, y=`Inactivity rate change`)) +
   theme_economist_white(base_size=6, base_family="Raleway", gray_bg = FALSE,horizontal=FALSE) + 
   xlab(NULL) + ylab(NULL) + scale_fill_lwi() + theme(legend.title=element_blank(), plot.margin = unit(c(0.1,0.1,0.5,0.1), "cm"))
 ggsave(paste0("chart21_",dateforpngs,".png"), width=100, height=60, unit="mm")
-ftpUpload(paste0("chart21_",dateforpngs,".png"), paste0("ftp://stats.learningandwork.org.uk:21/files/lms_images/chart21_",dateforpngs,".png"), userpwd ="stats:TwelveHorribleMonkeys")
 
 
 
     end.rcode-->
     
     
-<!--begin.rcode output_data, echo=FALSE , message=FALSE
-xlcFreeMemory()
-# 
-wb <- loadWorkbook(paste0(template_address, "/", "UK inclusion analysis.xlsx"))
-#createSheet(wb, name="Test")
-# # setStyleAction(wb,XLC$"STYLE_ACTION.NONE")
-setForceFormulaRecalculation(wb, sheet = 1:23, TRUE)
-#Unemployment (ILO)
-writeWorksheet(wb,overall[,"MGSC"], sheet="Unemployment (ILO)", startRow=8, startCol=3, header=FALSE)
-writeWorksheet(wb,maleallage[,"MGSD"], sheet="Unemployment (ILO)", startRow=8, startCol=4, header=FALSE)
-writeWorksheet(wb,femaleallage[,"MGSE"], sheet="Unemployment (ILO)", startRow=8, startCol=5, header=FALSE)
-#Unemployment rate (ILO)
-writeWorksheet(wb,overall[,"MGSX"], sheet="Unemployment rate (ILO)", startRow=8, startCol=3, header=FALSE)
-writeWorksheet(wb,maleallage[,"MGSY"], sheet="Unemployment rate (ILO)", startRow=8, startCol=4, header=FALSE)
-writeWorksheet(wb,femaleallage[,"MGSZ"], sheet="Unemployment rate (ILO)", startRow=8, startCol=5, header=FALSE)
-#Unemployment rates by age
-##TODO"
-writeWorksheet(wb,unemall[,"MGVI"], sheet="Unemployment rates by age", startRow=10, startCol=2, header=FALSE)
-writeWorksheet(wb,unemall[,"MGXB"], sheet="Unemployment rates by age", startRow=10, startCol=3, header=FALSE)
-writeWorksheet(wb,unemall[,"YBVN"], sheet="Unemployment rates by age", startRow=10, startCol=4, header=FALSE)
-writeWorksheet(wb,unemall[,"YBVQ"], sheet="Unemployment rates by age", startRow=10, startCol=5, header=FALSE)
-writeWorksheet(wb,unemall[,"YBVT"], sheet="Unemployment rates by age", startRow=10, startCol=6, header=FALSE)
-writeWorksheet(wb,unemall[,"YBVW"], sheet="Unemployment rates by age", startRow=10, startCol=7, header=FALSE)
-
-#Long-term unemployment
-writeWorksheet(wb,data.frame(unemall[,"YBXV"]+ unemall[,"YBXY"])[,1], sheet="Long-term unemployment", startRow=21, startCol=2, header=FALSE)
-writeWorksheet(wb,data.frame(unemall[,"YBYN"]+ unemall[,"YBZC"])[,1], sheet="Long-term unemployment", startRow=21, startCol=3, header=FALSE)
-writeWorksheet(wb,data.frame((duration_claimants[,16]+ duration_claimants[,19])*1000)[,1], sheet="Long-term unemployment", startRow=81, startCol=4, header=FALSE)
-writeWorksheet(wb,as.data.frame(sum5sa_zooyoff)[,1], sheet="Long-term unemployment", startRow=95, startCol=5, header=FALSE)
-writeWorksheet(wb,data.frame((duration_claimants[,28]+ duration_claimants[,37])*1000)[,1], sheet="Long-term unemployment", startRow=81, startCol=9, header=FALSE)
-writeWorksheet(wb,as.data.frame(sum5sa_zoooldoff)[,1], sheet="Long-term unemployment", startRow=95, startCol=10, header=FALSE)
-# 
-# 
-#Employment
-writeWorksheet(wb,overall[,"MGRZ"], sheet="Employment", startRow=9, startCol=2, header=FALSE)
-writeWorksheet(wb,overall[,"LF24"], sheet="Employment", startRow=9, startCol=3, header=FALSE)
-writeWorksheet(wb,maleallage[,"MGSA"], sheet="Employment", startRow=9, startCol=6, header=FALSE)
-writeWorksheet(wb,femaleallage[,"MGSB"], sheet="Employment", startRow=9, startCol=7, header=FALSE)
-#Employment rate
-writeWorksheet(wb,overall[,"MGRZ"], sheet="Employment rate", startRow=9, startCol=3, header=FALSE)
-writeWorksheet(wb,overall[,"LF24"], sheet="Employment rate", startRow=9, startCol=4, header=FALSE)
-writeWorksheet(wb,femaleallage[,"MGSB"], sheet="Employment rate", startRow=9, startCol=7, header=FALSE)
-writeWorksheet(wb,femaleallage[,"LF25"], sheet="Employment rate", startRow=9, startCol=8, header=FALSE)
-writeWorksheet(wb,maleallage[,"MGSB"], sheet="Employment rate", startRow=9, startCol=9, header=FALSE)
-writeWorksheet(wb,maleallage[,"MGSV"], sheet="Employment rate", startRow=9, startCol=10, header=FALSE)
-#Inactivity rate
-writeWorksheet(wb,overall[,"LF2M"], sheet="Inactivity rate", startRow=9, startCol=2, header=FALSE)
-writeWorksheet(wb,overall[,"LF22"], sheet="Inactivity rate", startRow=9, startCol=3, header=FALSE)
-writeWorksheet(wb,maleallage[,"YBSO"], sheet="Inactivity rate", startRow=9, startCol=6, header=FALSE)
-writeWorksheet(wb,femaleallage[,"LF2N"], sheet="Inactivity rate", startRow=9, startCol=7, header=FALSE)
-# 
-#"JSA claimant count"
-# writeWorksheet(wb,data.frame(lapply(claimants[,3], FUN=function(x)(x*1000))), sheet="JSA claimant count", startRow=8, startCol=3, header=FALSE)
-# writeWorksheet(wb,data.frame(lapply(male_claimants[,3], FUN=function(x)(x*1000))), sheet="JSA claimant count", startRow=8, startCol=5, header=FALSE)
-# writeWorksheet(wb,data.frame(lapply(female_claimants[,3], FUN=function(x)(x*1000))), sheet="JSA claimant count", startRow=8, startCol=6, header=FALSE)
-# writeWorksheet(wb,claimants[,4], sheet="JSA claimant count", startRow=8, startCol=7, header=FALSE)
-# 
-#JSA new claims and leavers
-writeWorksheet(wb,data.frame(lapply(claimants[,5], FUN=function(x)(x*1000))), sheet="JSA new claims and leavers", startRow=8, startCol=3, header=FALSE)
-writeWorksheet(wb,data.frame(lapply(claimants[,6], FUN=function(x)(x*1000))), sheet="JSA new claims and leavers", startRow=8, startCol=4, header=FALSE)
-# 
-#Long-term unemployment rate
-writeWorksheet(wb,as.data.frame(season_pars), sheet="Long-term unemployment rate", startRow=9, startCol=2, header=FALSE)
-
-#Starters getting long term JSA
-writeWorksheet(wb,as.data.frame(season_pars), sheet="Starters getting long term JSA", startRow=9, startCol=2, header=FALSE)
-
-#ONS vacancies
-writeWorksheet(wb,vacancies[,3], sheet="ONS vacancies", startRow=8, startCol=3, header=FALSE)
-writeWorksheet(wb,vacancies[,5], sheet="ONS vacancies", startRow=10, startCol=8, header=FALSE)
-# 
-#Inactivity
-# writeWorksheet(wb,inactivity[,10], sheet="Inactivity", startRow=11, startCol=2, header=FALSE)
-# writeWorksheet(wb,inactivity[,6], sheet="Inactivity", startRow=11, startCol=3, header=FALSE)
-# 
-
-#Hours (total)
-# writeWorksheet(wb,hours[,2], sheet="Hours (total)", startRow=9, startCol=2, header=FALSE)
-# writeWorksheet(wb,male_hours[,2], sheet="Hours (total)", startRow=9, startCol=5, header=FALSE)
-# writeWorksheet(wb,female_hours[,2], sheet="Hours (total)", startRow=9, startCol=6, header=FALSE)
-# 
-#Average hours
-# writeWorksheet(wb,hours[255:nrow(hours),4], sheet="Average hours", startRow=9, startCol=2, header=FALSE)
-# writeWorksheet(wb,male_hours[255:nrow(male_hours),4], sheet="Average hours", startRow=9, startCol=5, header=FALSE)
-# writeWorksheet(wb,female_hours[255:nrow(female_hours),4], sheet="Average hours", startRow=9, startCol=6, header=FALSE)
-
-#Involuntary part-time
-
-# writeWorksheet(wb,involunt_emp[,18], sheet="Involuntary part-time", startRow=9, startCol=2, header=FALSE)
-# writeWorksheet(wb,involunt_emp[,20], sheet="Involuntary part-time", startRow=9, startCol=3, header=FALSE)
-# writeWorksheet(wb,maleinvolunt_emp[,20], sheet="Involuntary part-time", startRow=9, startCol=6, header=FALSE)
-# writeWorksheet(wb,femaleinvolunt_emp[,20], sheet="Involuntary part-time", startRow=9, startCol=7, header=FALSE)
-# 
-#Youth unemployment
-# writeWorksheet(wb,youth[,14], sheet="Youth unemployment", startRow=19, startCol=2, header=FALSE)
-# writeWorksheet(wb,youth[,9], sheet="Youth unemployment", startRow=19, startCol=3, header=FALSE)
-# writeWorksheet(wb,youth[,15], sheet="Youth unemployment", startRow=19, startCol=5, header=FALSE)
-# 
-# writeWorksheet(wb,youth[,12], sheet="Youth unemployment", startRow=19, startCol=7, header=FALSE)
-# writeWorksheet(wb,youth[,7], sheet="Youth unemployment", startRow=19, startCol=8, header=FALSE)
-# writeWorksheet(wb,youth[,2], sheet="Youth unemployment", startRow=19, startCol=9, header=FALSE)
-# writeWorksheet(wb,duration_claimants[,13], sheet="Youth unemployment", startRow=79, startCol=18, header=FALSE)
-# writeWorksheet(wb,as.data.frame(sum5sa_zooyoff)[,1], sheet="Youth unemployment", startRow=93, startCol=21, header=FALSE)
-#Regional Employment
-writeWorksheet(wb,regionquarter[,5], sheet="Regional Employment", startRow=10, startCol=3, header=FALSE)
-writeWorksheet(wb,regionstocks[,5], sheet="Regional Employment", startRow=10, startCol=4, header=FALSE)
-# 
-#Regional Unemployment
-writeWorksheet(wb,regionquarter[,7], sheet="Regional Unemployment", startRow=10, startCol=3, header=FALSE)
-# writeWorksheet(wb,regionstocks[,7], sheet="Regional Unemployment", startRow=10, startCol=4, header=FALSE)
-
-#Regional Inactivity
-writeWorksheet(wb,regionquarter[,9], sheet="Regional Inactivity", startRow=10, startCol=3, header=FALSE)
-writeWorksheet(wb,regionstocks[,9], sheet="Regional Inactivity", startRow=10, startCol=4, header=FALSE)
-
-saveWorkbook( wb, paste0(template_address, "/", "UK inclusion analysis",as.character.Date(Sys.Date()) ,".xlsx"))
-    end.rcode-->
 
 <table width="550" border="0" align="left" cellpadding="5" cellspacing="0" bgcolor="#FFFFFF" id="bodytable">
   <tr>
